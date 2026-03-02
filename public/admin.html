@@ -65,21 +65,22 @@ let questions = {};
 let answeredStatus = [];
 let timerInterval = null;
 let timeLeft = 0;
+let currentSection = "";
 
-// Load sections from questions.json
-fetch('/questions.json')
-  .then(res => res.json())
-  .then(data => {
-    questions = data;
-    const select = document.getElementById('sectionSelect');
-    Object.keys(questions).forEach(sec => {
-      const opt = document.createElement('option');
-      opt.value = sec;
-      opt.innerText = sec;
-      select.appendChild(opt);
-    });
-  })
-  .catch(err => console.error("Failed to load questions.json:", err));
+// ====================
+// Load sections from server
+// ====================
+socket.emit('get_sections');
+socket.on('sections_list', data => {
+  const select = document.getElementById('sectionSelect');
+  select.innerHTML = '<option value="">--Select Section--</option>';
+  data.forEach(sec => {
+    const opt = document.createElement('option');
+    opt.value = sec;
+    opt.innerText = sec;
+    select.appendChild(opt);
+  });
+});
 
 // ====================
 // Button events
@@ -87,48 +88,28 @@ fetch('/questions.json')
 document.getElementById('startSectionBtn').onclick = () => {
   const section = document.getElementById('sectionSelect').value;
   if(!section) return alert('Select a section');
+  currentSection = section;
   socket.emit('start_section', section);
-  answeredStatus = questions[section].map(() => false);
-  renderQuestions();
 };
 
-document.getElementById('showWaitingBtn').onclick = () => {
-  socket.emit('waiting_message');
-};
-
-document.getElementById('newQuestionBtn').onclick = () => {
-  socket.emit('new_question');
-};
-
-document.getElementById('showCorrectBtn').onclick = () => {
-  socket.emit('show_correct');
-};
-
-document.getElementById('startTimerBtn').onclick = () => {
-  socket.emit('start_timer');
-};
-
-document.getElementById('exportBtn').onclick = () => {
-  socket.emit('export_results');
-  alert("Results exported to server CSV file.");
-};
+document.getElementById('showWaitingBtn').onclick = () => socket.emit('waiting_message');
+document.getElementById('newQuestionBtn').onclick = () => socket.emit('new_question');
+document.getElementById('showCorrectBtn').onclick = () => socket.emit('show_correct');
+document.getElementById('startTimerBtn').onclick = () => socket.emit('start_timer');
+document.getElementById('exportBtn').onclick = () => { socket.emit('export_results'); alert("Results exported to server CSV file."); };
 
 // ====================
 // Socket events
 // ====================
 socket.on('participants_update', data => {
   let text = "";
-  for(let id in data){
-    text += `${data[id].name} (${data[id].examNumber})\n`;
-  }
+  for(let id in data) text += `${data[id].name} (${data[id].examNumber})\n`;
   document.getElementById('participants').innerText = text || "Waiting for participants...";
 });
 
 socket.on('answers_update', data => {
   let text = "Pending Answers:\n";
-  for(let name in data.answers){
-    text += `${name}: ${data.answers[name]}\n`;
-  }
+  for(let name in data.answers) text += `${name}: ${data.answers[name]}\n`;
   document.getElementById('participants').innerText = text;
 });
 
@@ -141,6 +122,7 @@ socket.on('correct_answer', data => {
   text += `\nCumulative Scores:\n`;
   for(let name in data.scores) text += `${name}: ${data.scores[name]}\n`;
   document.getElementById('participants').innerText = text;
+
   answeredStatus[data.questionIndex] = true;
   renderQuestions();
   resetTimer();
@@ -152,18 +134,17 @@ socket.on('leaderboard_update', data => {
   document.getElementById('leaderboard').innerText = text;
 });
 
-// Render questions list when section starts
 socket.on('admin_section_questions', data => {
-  answeredStatus = data.questions.map(() => false);
+  currentSection = data.section;
+  answeredStatus = data.answered;
+  questions[currentSection] = data.questions;
   renderQuestions();
 });
 
-// Display waiting message
 socket.on('waiting_message', data => {
   document.getElementById('participants').innerText = data.text;
 });
 
-// Start timer
 socket.on('start_timer', () => startTimer(15));
 
 // ====================
@@ -172,9 +153,8 @@ socket.on('start_timer', () => startTimer(15));
 function renderQuestions(){
   const container = document.getElementById('questionList');
   container.innerHTML = '';
-  const section = document.getElementById('sectionSelect').value;
-  if(!questions[section]) return;
-  questions[section].forEach((q,i)=>{
+  if(!questions[currentSection]) return;
+  questions[currentSection].forEach((q,i)=>{
     const div = document.createElement('div');
     div.innerText = `${i+1}. ${q.text} ${answeredStatus[i]? '✅':'❌'}`;
     container.appendChild(div);
