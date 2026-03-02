@@ -1,80 +1,199 @@
-
 {
   "James": [
-    { "text": "According to James 1:19, what should be the first response of a person?", "options": ["A) Speak quickly","B) Be quick to listen, slow to speak, slow to anger","C) Judge others carefully","D) Pray before acting"], "correct": "B" },
-    { "text": "James 2:14 emphasizes that faith without ___ is dead.", "options": ["A) Works","B) Knowledge","C) Prayer","D) Sacrifice"], "correct": "A" },
-    { "text": "James compares the tongue to a ___ that sets the course of life on fire.", "options": ["A) Lion","B) Fire","C) Small rudder","D) Sword"], "correct": "C" },
-    { "text": "Which chapter in James warns about favoritism toward the rich over the poor?", "options": ["A) Chapter 1","B) Chapter 2","C) Chapter 3","D) Chapter 5"], "correct": "B" },
-    { "text": "James 4:7 teaches submission to ___ and resistance to ___.", "options": ["A) God; the devil","B) Leaders; sinners","C) Parents; friends","D) The law; sin"], "correct": "A" },
-    { "text": "James 1:27 defines pure religion as caring for orphans and widows and keeping oneself ___ from the world.", "options": ["A) Separate","B) Unstained","C) Holy","D) Righteous"], "correct": "B" },
-    { "text": "Which metaphor does James use for the danger of favoritism?", "options": ["A) A double-minded man","B) A mirror that distorts","C) A spring that yields bitter water","D) Partiality toward people"], "correct": "D" },
-    { "text": "What example of patience does James 5:7–8 highlight?", "options": ["A) Abraham waiting for Isaac","B) Job enduring trials","C) Farmers waiting for crops","D) Moses leading Israel"], "correct": "C" },
-    { "text": "James 3 warns about the tongue, comparing it to all except:", "options": ["A) A small spark setting a forest ablaze","B) A rudder controlling a ship","C) A horse bit controlling the whole animal","D) A stone causing landslides"], "correct": "D" },
-    { "text": "James 5:16 teaches believers to confess sins to:", "options": ["A) Family members","B) The priest","C) Each other","D) Angels"], "correct": "C" }
+    {
+      "text": "According to James 1:19, what should be the first response of a person?",
+      "options": ["A) Speak quickly","B) Be quick to listen, slow to speak, slow to anger","C) Judge others carefully","D) Pray before acting"],
+      "correct": "B"
+    },
+    {
+      "text": "James 2:14 emphasizes that faith without ___ is dead.",
+      "options": ["A) Works","B) Knowledge","C) Prayer","D) Sacrifice"],
+      "correct": "A"
+    },
+    {
+      "text": "James compares the tongue to a ___ that sets the course of life on fire.",
+      "options": ["A) Lion","B) Fire","C) Small rudder","D) Sword"],
+      "correct": "C"
+    },
+    {
+      "text": "Which chapter in James warns about favoritism toward the rich over the poor?",
+      "options": ["A) Chapter 1","B) Chapter 2","C) Chapter 3","D) Chapter 5"],
+      "correct": "B"
+    },
+    {
+      "text": "James 4:7 teaches submission to ___ and resistance to ___.",
+      "options": ["A) God; the devil","B) Leaders; sinners","C) Parents; friends","D) The law; sin"],
+      "correct": "A"
+    },
+    {
+      "text": "James 1:27 defines pure religion as caring for orphans and widows and keeping oneself ___ from the world.",
+      "options": ["A) Separate","B) Unstained","C) Holy","D) Righteous"],
+      "correct": "B"
+    },
+    {
+      "text": "Which metaphor does James use for the danger of favoritism?",
+      "options": ["A) A double-minded man","B) A mirror that distorts","C) A spring that yields bitter water","D) Partiality toward people"],
+      "correct": "D"
+    },
+    {
+      "text": "What example of patience does James 5:7–8 highlight?",
+      "options": ["A) Abraham waiting for Isaac","B) Job enduring trials","C) Farmers waiting for crops","D) Moses leading Israel"],
+      "correct": "C"
+    },
+    {
+      "text": "James 3 warns about the tongue, comparing it to all except:",
+      "options": ["A) A small spark setting a forest ablaze","B) A rudder controlling a ship","C) A horse bit controlling the whole animal","D) A stone causing landslides"],
+      "correct": "D"
+    },
+    {
+      "text": "James 5:16 teaches believers to confess sins to:",
+      "options": ["A) Family members","B) The priest","C) Each other","D) Angels"],
+      "correct": "C"
+    }
   ],
 
   "Joshua": [
-    { "text": "Who succeeded Moses as the leader of Israel?", "options": ["A) Caleb","B) Aaron","C) Joshua","D) Eleazar"], "correct": "C" },
-    { "text": "The walls of which city fell after the Israelites marched around it for seven days?", "options": ["A) Jericho","B) Ai","C) Gibeon","D) Hebron"], "correct": "A" },
-    { "text": "Who were the two spies that Joshua sent into Canaan secretly?", "options": ["A) Joshua and Caleb","B) Joshua and Eleazar","C) Caleb and Aaron","D) Caleb and Rahab"], "correct": "D" },
-    { "text": "Joshua 1:9 tells Israel to be strong and courageous because:", "options": ["A) They will face giants","B) God will be with them wherever they go","C) Moses commanded it","D) They must conquer Egypt"], "correct": "B" },
-    { "text": "How did the Israelites divide the Jordan River when entering Canaan?", "options": ["A) They built a dam","B) The river dried up temporarily","C) They crossed at a bridge","D) They waited until flood season"], "correct": "B" },
-    { "text": "Who tricked Joshua into making a treaty with them by pretending to come from a distant land?", "options": ["A) Ai","B) Gibeonites","C) Jericho","D) Philistines"], "correct": "B" },
-    { "text": "Joshua 24:15 contains what famous declaration?", "options": ["A) “As for me and my house, we will serve the Lord.”","B) “Choose this day whom you will serve.”","C) “Be strong and courageous.”","D) “The land is yours.”"], "correct": "A" },
-    { "text": "Which two leaders’ bones were carried into Canaan?", "options": ["A) Moses and Aaron","B) Joseph and Joshua","C) Joseph and Moses","D) Caleb and Moses"], "correct": "C" },
-    { "text": "How did the Israelites defeat Ai after their first failed attack?", "options": ["A) Ambush from behind the city","B) Famine and siege","C) Fire from heaven","D) Sending spies"], "correct": "A" },
-    { "text": "What was the condition God set for Israel to prosper in Joshua 1?", "options": ["A) Conquering all enemies","B) Reading the Book of the Law continually and obeying it","C) Building the Temple","D) Offering sacrifices daily"], "correct": "B" }
+    {
+      "text": "Who succeeded Moses as the leader of Israel?",
+      "options": ["A) Caleb","B) Aaron","C) Joshua","D) Eleazar"],
+      "correct": "C"
+    },
+    {
+      "text": "The walls of which city fell after the Israelites marched around it for seven days?",
+      "options": ["A) Jericho","B) Ai","C) Gibeon","D) Hebron"],
+      "correct": "A"
+    },
+    {
+      "text": "Who were the two spies that Joshua sent into Canaan secretly?",
+      "options": ["A) Joshua and Caleb","B) Joshua and Eleazar","C) Caleb and Aaron","D) Caleb and Rahab"],
+      "correct": "D"
+    },
+    {
+      "text": "Joshua 1:9 tells Israel to be strong and courageous because:",
+      "options": ["A) They will face giants","B) God will be with them wherever they go","C) Moses commanded it","D) They must conquer Egypt"],
+      "correct": "B"
+    },
+    {
+      "text": "How did the Israelites divide the Jordan River when entering Canaan?",
+      "options": ["A) They built a dam","B) The river dried up temporarily","C) They crossed at a bridge","D) They waited until flood season"],
+      "correct": "B"
+    },
+    {
+      "text": "Who tricked Joshua into making a treaty with them by pretending to come from a distant land?",
+      "options": ["A) Ai","B) Gibeonites","C) Jericho","D) Philistines"],
+      "correct": "B"
+    },
+    {
+      "text": "Joshua 24:15 contains what famous declaration?",
+      "options": ["A) “As for me and my house, we will serve the Lord.”","B) “Choose this day whom you will serve.”","C) “Be strong and courageous.”","D) “The land is yours.”"],
+      "correct": "A"
+    },
+    {
+      "text": "Which two leaders’ bones were carried into Canaan?",
+      "options": ["A) Moses and Aaron","B) Joseph and Joshua","C) Joseph and Moses","D) Caleb and Moses"],
+      "correct": "C"
+    },
+    {
+      "text": "How did the Israelites defeat Ai after their first failed attack?",
+      "options": ["A) Ambush from behind the city","B) Famine and siege","C) Fire from heaven","D) Sending spies"],
+      "correct": "A"
+    },
+    {
+      "text": "What was the condition God set for Israel to prosper in Joshua 1?",
+      "options": ["A) Conquering all enemies","B) Reading the Book of the Law continually and obeying it","C) Building the Temple","D) Offering sacrifices daily"],
+      "correct": "B"
+    }
   ],
 
   "1 Kings": [
-    { "text": "Who was Solomon’s father?", "options": ["A) David","B) Saul","C) Rehoboam","D) Absalom"], "correct": "A" },
-    { "text": "Which prophet confronted King Ahab about Naboth’s vineyard?", "options": ["A) Elijah","B) Elisha","C) Isaiah","D) Jeremiah"], "correct": "A" },
-    { "text": "What request did Solomon make from God at Gibeon?", "options": ["A) Wealth","B) Wisdom","C) Long life","D) Military victory"], "correct": "B" },
-    { "text": "Which king built the Temple in Jerusalem?", "options": ["A) Saul","B) David","C) Solomon","D) Rehoboam"], "correct": "C" },
-    { "text": "Who challenged 450 prophets of Baal on Mount Carmel?", "options": ["A) Elijah","B) Elisha","C) Samuel","D) Nathan"], "correct": "A" },
-    { "text": "Which queen visited Solomon to test his wisdom?", "options": ["A) Jezebel","B) Athaliah","C) Queen of Sheba","D) Esther"], "correct": "C" },
-    { "text": "1 Kings 11 mentions Solomon’s downfall was due to:", "options": ["A) Pride in wealth","B) Foreign wives and idolatry","C) Ignoring the poor","D) Neglecting military"], "correct": "B" },
-    { "text": "Who succeeded Solomon as king of Israel?", "options": ["A) Jeroboam","B) Rehoboam","C) Abijah","D) Asa"], "correct": "B" },
-    { "text": "Which king healed Naaman the Syrian?", "options": ["A) Ahab","B) Jehoram","C) Elisha","D) Ahaziah"], "correct": "C" },
-    { "text": "Which prophet predicted the division of the kingdom after Solomon’s reign?", "options": ["A) Elijah","B) Ahijah","C) Nathan","D) Micaiah"], "correct": "B" }
+    {
+      "text": "Who was Solomon’s father?",
+      "options": ["A) David","B) Saul","C) Rehoboam","D) Absalom"],
+      "correct": "A"
+    },
+    {
+      "text": "Which prophet confronted King Ahab about Naboth’s vineyard?",
+      "options": ["A) Elijah","B) Elisha","C) Isaiah","D) Jeremiah"],
+      "correct": "A"
+    },
+    {
+      "text": "What request did Solomon make from God at Gibeon?",
+      "options": ["A) Wealth","B) Wisdom","C) Long life","D) Military victory"],
+      "correct": "B"
+    },
+    {
+      "text": "Which king built the Temple in Jerusalem?",
+      "options": ["A) Saul","B) David","C) Solomon","D) Rehoboam"],
+      "correct": "C"
+    },
+    {
+      "text": "Who challenged 450 prophets of Baal on Mount Carmel?",
+      "options": ["A) Elijah","B) Elisha","C) Samuel","D) Nathan"],
+      "correct": "A"
+    },
+    {
+      "text": "Which queen visited Solomon to test his wisdom?",
+      "options": ["A) Jezebel","B) Athaliah","C) Queen of Sheba","D) Esther"],
+      "correct": "C"
+    },
+    {
+      "text": "1 Kings 11 mentions Solomon’s downfall was due to:",
+      "options": ["A) Pride in wealth","B) Foreign wives and idolatry","C) Ignoring the poor","D) Neglecting military"],
+      "correct": "B"
+    },
+    {
+      "text": "Who succeeded Solomon as king of Israel?",
+      "options": ["A) Jeroboam","B) Rehoboam","C) Abijah","D) Asa"],
+      "correct": "B"
+    },
+    {
+      "text": "Which king healed Naaman the Syrian?",
+      "options": ["A) Ahab","B) Jehoram","C) Elisha","D) Ahaziah"],
+      "correct": "C"
+    },
+    {
+      "text": "Which prophet predicted the division of the kingdom after Solomon’s reign?",
+      "options": ["A) Elijah","B) Ahijah","C) Nathan","D) Micaiah"],
+      "correct": "B"
+    }
   ],
 
   "Proverbs": [
-    { "text": "According to Proverbs 3:5–6, trust in the Lord with all your heart and:", "options": ["A) Lean on your own understanding","B) Do your own will","C) Acknowledge Him in all your ways","D) Seek wealth first"], "correct": "C" },
-    { "text": "Proverbs 6 warns that laziness leads to:", "options": ["A) Poverty and hunger","B) Wisdom","C) Honor","D) Strength"], "correct": "A" },
-    { "text": "Proverbs 18:21 says the tongue has the power of:", "options": ["A) Life and death","B) Blessings only","C) Sickness","D) Confusion"], "correct": "A" },
-    { "text": "Who is called “a fool” repeatedly in Proverbs?", "options": ["A) The wise","B) The scorner","C) The rich","D) The humble"], "correct": "B" },
-    { "text": "Proverbs 31 describes the virtuous woman as:", "options": ["A) Silent","B) Fearless and kind","C) Industrious and wise","D) Proud"], "correct": "C" },
-    { "text": "Proverbs teaches that pride goes before:", "options": ["A) Peace","B) Destruction","C) Riches","D) Joy"], "correct": "B" },
-    { "text": "Which chapter emphasizes “Train up a child in the way he should go”?", "options": ["A) Proverbs 1","B) Proverbs 10","C) Proverbs 22","D) Proverbs 31"], "correct": "C" },
-    { "text": "Proverbs 27:17 states:", "options": ["A) Iron sharpens iron, and one man sharpens another","B) Pride comes before destruction","C) A soft answer turns away wrath","D) A cheerful heart is good medicine"], "correct": "A" },
-    { "text": "According to Proverbs 16:18, what precedes destruction?", "options": ["A) Laziness","B) Pride","C) Wickedness","D) Foolishness"], "correct": "B" },
-    { "text": "What does Proverbs 15:1 say about a gentle answer?", "options": ["A) Brings shame","B) Turns away wrath","C) Confuses the wicked","D) Angers fools"], "correct": "B" }
+    {
+      "text": "According to Proverbs 3:5–6, trust in the Lord with all your heart and:",
+      "options": ["A) Lean on your own understanding","B) Do your own will","C) Acknowledge Him in all your ways","D) Seek wealth first"],
+      "correct": "C"
+    },
+    {
+      "text": "Proverbs 6 warns that laziness leads to:",
+      "options": ["A) Poverty and hunger","B) Wisdom","C) Honor","D) Strength"],
+      "correct": "A"
+    }
   ],
 
   "Romans": [
-    { "text": "Paul wrote Romans from:", "options": ["A) Jerusalem","B) Corinth","C) Antioch","D) Rome"], "correct": "B" },
-    { "text": "Romans 3:23 says all have sinned and:", "options": ["A) Should pay the penalty","B) Fall short of the glory of God","C) Need wisdom","D) Are justified"], "correct": "B" },
-    { "text": "Romans 6:23 states the wages of sin is:", "options": ["A) Shame","B) Death","C) Suffering","D) Poverty"], "correct": "B" },
-    { "text": "Romans 8:1 declares there is no condemnation for:", "options": ["A) The righteous","B) Those in Christ Jesus","C) Israel","D) The obedient"], "correct": "B" },
-    { "text": "Romans 12:1 urges believers to present their bodies as:", "options": ["A) A gift of sacrifice","B) Holy and acceptable","C) A living sacrifice","D) Perfect and flawless"], "correct": "C" },
-    { "text": "Romans 1:16 says the gospel is the power of God for:", "options": ["A) Teaching","B) Salvation to everyone who believes","C) Punishment","D) Wisdom"], "correct": "B" },
-    { "text": "Romans 5:8 says God demonstrates His love for us:", "options": ["A) By giving prosperity","B) While we were still sinners","C) After we obey","D) Through miracles"], "correct": "B" },
-    { "text": "Romans 13:1 instructs believers to:", "options": ["A) Obey rulers and authorities","B) Rebel against oppression","C) Choose leaders wisely","D) Avoid taxes"], "correct": "A" },
-    { "text": "Romans 10 emphasizes faith comes by:", "options": ["A) Hearing the word of Christ","B) Works of law","C) Sacrifices","D) Wisdom"], "correct": "A" },
-    { "text": "Romans 14 advises believers to:", "options": ["A) Judge others’ dietary choices","B) Accept weaker brothers without quarreling","C) Avoid fellowship","D) Deny the faith"], "correct": "B" }
+    {
+      "text": "Paul wrote Romans from:",
+      "options": ["A) Jerusalem","B) Corinth","C) Antioch","D) Rome"],
+      "correct": "B"
+    },
+    {
+      "text": "Romans 3:23 says all have sinned and:",
+      "options": ["A) Should pay the penalty","B) Fall short of the glory of God","C) Need wisdom","D) Are justified"],
+      "correct": "B"
+    }
   ],
 
   "General Bible Knowledge": [
-    { "text": "How many books are in the Bible?", "options": ["A) 66","B) 70","C) 73","D) 60"], "correct": "A" },
-    { "text": "Who wrote most of the Psalms?", "options": ["A) Moses","B) David","C) Solomon","D) Asaph"], "correct": "B" },
-    { "text": "Which Old Testament book has the shortest chapter?", "options": ["A) Psalm 117","B) Psalm 119","C) Obadiah","D) Nahum"], "correct": "A" },
-    { "text": "Which disciple denied Jesus three times?", "options": ["A) Peter","B) John","C) Judas","D) Thomas"], "correct": "A" },
-    { "text": "What river did John baptize people in?", "options": ["A) Nile","B) Jordan","C) Euphrates","D) Tigris"], "correct": "B" },
-    { "text": "Who was thrown into the lion’s den?", "options": ["A) Daniel","B) Shadrach","C) Meshach","D) Abednego"], "correct": "A" },
-    { "text": "What is the first miracle of Jesus recorded in John?", "options": ["A) Healing the blind man","B) Water turned to wine at Cana","C) Feeding 5000","D) Walking on water"], "correct": "B" },
-    { "text": "How many plagues did God send on Egypt?", "options": ["A) 7","B) 10","C) 12","D) 5"], "correct": "B" },
-    { "text": "Who interpreted Pharaoh’s dreams in Egypt?", "options": ["A) Moses","B) Joseph","C) Daniel","D) Aaron"], "correct": "B" },
-    { "text": "Which prophet was taken up to heaven in a whirlwind?", "options": ["A) Elisha","B) Elijah","C) Isaiah","D) Ezekiel"], "correct": "B" }
+    {
+      "text": "How many books are in the Bible?",
+      "options": ["A) 66","B) 70","C) 73","D) 60"],
+      "correct": "A"
+    },
+    {
+      "text": "Who wrote most of the Psalms?",
+      "options": ["A) Moses","B) David","C) Solomon","D) Asaph"],
+      "correct": "B"
+    }
   ]
 }
