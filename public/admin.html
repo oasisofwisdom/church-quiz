@@ -1,189 +1,190 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BBC 7.0 Admin - Oasis of Wisdom Bible Church</title>
-<style>
-  body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f0f4f3; }
-  header { background:#2e7d32; color:white; text-align:center; padding:20px; }
-  header h1 { margin:0; font-size:24px; }
-  header p { margin:2px 0; font-size:14px; font-style:italic; }
-
-  main { max-width:900px; margin:20px auto; padding:10px; background:white; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
-
-  select, button { padding:10px; font-size:16px; margin:5px 0; border-radius:8px; border:1px solid #ccc; }
-  button { background:#2e7d32; color:white; cursor:pointer; border:none; }
-  button:hover { background:#1b5e20; }
-
-  #controls { margin-bottom:20px; }
-  #questionList { margin-bottom:20px; display:flex; flex-wrap:wrap; gap:12px; }
-  .card { background:white; border:1px solid #ccc; border-radius:12px; padding:15px; width:100%; max-width:400px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-  .card h4 { margin-top:0; }
-  .options button { display:block; margin:5px 0; width:100%; border-radius:8px; text-align:left; }
-  .correct { background:#c8e6c9; }
-  .wrong { background:#ffcdd2; }
-
-  #participants, #leaderboard { white-space: pre-wrap; background:#e8f5e9; padding:10px; border-radius:8px; margin-bottom:10px; min-height:60px; }
-
-  footer { text-align:center; font-size:12px; margin-top:20px; color:#555; }
-</style>
+  <title>Admin Dashboard</title>
+  <style>
+    .section-btn { margin: 5px; padding: 8px 12px; cursor: pointer; }
+    .question-btn { display: block; margin: 5px 0; padding: 5px; cursor: pointer; width: 100%; text-align: left; }
+    .answered { background-color: #4CAF50; color: white; }
+    .unanswered { background-color: #f44336; color: white; }
+    #revealBtn, #timerBtn, #nextBtn, #exportBtn { margin-top: 10px; padding: 8px 12px; cursor: pointer; }
+    #leaderboard { margin-top: 20px; }
+  </style>
 </head>
 <body>
-<header>
-  <h1>Oasis of Wisdom Bible Church</h1>
-  <p>Back to the Bible Challenge (BBC) 7.0</p>
-  <p><em>Theme: Walking in Covenant Perfection. Matthew 5:48</em></p>
-</header>
 
-<main>
-  <div id="sectionsContainer">
-    <label for="sectionSelect">Select Section:</label>
-    <select id="sectionSelect">
-      <option value="">--Select Section--</option>
-    </select>
-    <button id="startSectionBtn">Load Section</button>
-  </div>
+<h2>Admin Dashboard</h2>
 
-  <div id="controls">
-    <button id="nextQuestionBtn">Next Question</button>
-    <button id="revealAnswerBtn">Reveal Answer</button>
-    <button id="exportBtn">Export Results</button>
-  </div>
+<h3>Sections</h3>
+<div id="sectionsDiv"></div>
 
-  <h3>Current Question</h3>
-  <div id="questionList"></div>
+<h3>Questions in Section</h3>
+<div id="questionsDiv"></div>
 
-  <h3>Participants / Answers</h3>
-  <div id="participants">Waiting for participants...</div>
+<button id="timerBtn" style="display:none;" onclick="startTimer()">Start Timer</button>
+<button id="revealBtn" style="display:none;" onclick="revealCorrect()">Show Correct Answer</button>
+<button id="nextBtn" style="display:none;" onclick="nextQuestion()">Next Question</button>
+<button id="exportBtn" style="display:none;" onclick="exportResults()">Export Results</button>
 
-  <h3>Leaderboard</h3>
-  <div id="leaderboard">No scores yet</div>
-</main>
+<h3>Participants Live / Answers / Scores</h3>
+<pre id="participants"></pre>
 
-<footer>
-  BBC! The Word in my heart and acts.<br>
-  BB&C! Believing and Behaving the Bible
-</footer>
+<h3>Live Leaderboard</h3>
+<pre id="leaderboard"></pre>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-const socket = io();
+  const socket = io();
 
-let questions = {};
-let currentSection = "";
-let currentIndex = -1;
-let currentQuestion = {};
-let participantAnswers = {};
-let scores = {};
+  let currentSection = "";
+  let sectionQuestions = [];
+  let answeredStatus = [];
+  let currentQuestionIndex = null;
+  let scores = {};
 
-// Load questions.json
-fetch('/questions.json')
-  .then(res => res.json())
-  .then(data => {
-    questions = data;
-    const select = document.getElementById('sectionSelect');
-    Object.keys(questions).forEach(sec => {
-      const opt = document.createElement('option');
-      opt.value = sec;
-      opt.innerText = sec;
-      select.appendChild(opt);
-    });
-  })
-  .catch(err => console.error("Failed to load questions.json:", err));
-
-// ===================
-// Admin Button Events
-// ===================
-document.getElementById('startSectionBtn').onclick = () => {
-  const section = document.getElementById('sectionSelect').value;
-  if(!section) return alert('Select a section');
-  currentSection = section;
-  currentIndex = -1;
-  socket.emit('start_section', section);
-  renderCurrentQuestion();
-};
-
-document.getElementById('nextQuestionBtn').onclick = () => {
-  if(!currentSection) return alert("Select a section first");
-  currentIndex++;
-  if(currentIndex >= questions[currentSection].length) {
-    alert("All questions completed");
-    currentIndex = questions[currentSection].length - 1;
-    return;
-  }
-  currentQuestion = questions[currentSection][currentIndex];
-  participantAnswers = {};
-  socket.emit('send_question', { section: currentSection, question: currentQuestion, index: currentIndex });
-  renderCurrentQuestion();
-};
-
-document.getElementById('revealAnswerBtn').onclick = () => {
-  if(!currentQuestion || !currentSection) return;
-  const results = {};
-  for(let name in participantAnswers){
-    const ans = participantAnswers[name];
-    const correct = ans === currentQuestion.answer;
-    if(correct) scores[name] = (scores[name]||0) +1;
-    results[name] = { answer: ans, correct };
-  }
-  socket.emit('reveal_answer', { results, correctOption: currentQuestion.answer, index: currentIndex });
-  renderCurrentQuestion(results);
-};
-
-document.getElementById('exportBtn').onclick = () => {
-  socket.emit('export_results');
-  alert("Results exported to server CSV file.");
-};
-
-// ===================
-// Socket Events
-// ===================
-socket.on('participants_update', data => {
-  let text = "";
-  for(let id in data){
-    text += `${data[id].name} (${data[id].examNumber})\n`;
-    if(!(data[id].name in scores)) scores[data[id].name] = 0;
-  }
-  document.getElementById('participants').innerText = text || "Waiting for participants...";
-});
-
-socket.on('leaderboard_update', data => {
-  let text = "";
-  for(let name in data) text += `${name}: ${data[name]}\n`;
-  document.getElementById('leaderboard').innerText = text;
-});
-
-// ===================
-// Functions
-// ===================
-function renderCurrentQuestion(results={}){
-  const container = document.getElementById('questionList');
-  container.innerHTML = '';
-  if(currentIndex<0 || !currentSection) return;
-
-  const q = questions[currentSection][currentIndex];
-  const card = document.createElement('div');
-  card.className = 'card';
-
-  const h4 = document.createElement('h4');
-  h4.innerText = `Q${currentIndex+1}: ${q.question}`;
-  card.appendChild(h4);
-
-  const optionsDiv = document.createElement('div');
-  optionsDiv.className = 'options';
-
-  ['A','B','C','D'].forEach(opt=>{
-    const btn = document.createElement('button');
-    btn.innerText = `${opt}) ${q[opt]}`;
-    if(results[opt]){
-      btn.className = results[opt].correct ? 'correct':'wrong';
-    }
-    optionsDiv.appendChild(btn);
+  // Render sections
+  const sections = ["Joshua","1 Kings","Proverbs","Romans","James","General Bible Knowledge"];
+  const sectionsDiv = document.getElementById("sectionsDiv");
+  sections.forEach(sec => {
+    const btn = document.createElement("button");
+    btn.innerText = sec;
+    btn.className = "section-btn";
+    btn.onclick = () => {
+      socket.emit("start_section", sec);
+      currentSection = sec;
+      document.getElementById("questionsDiv").innerHTML = "";
+      hideButtons();
+    };
+    sectionsDiv.appendChild(btn);
   });
-  card.appendChild(optionsDiv);
-  container.appendChild(card);
-}
+
+  function hideButtons() {
+    document.getElementById("revealBtn").style.display = "none";
+    document.getElementById("timerBtn").style.display = "none";
+    document.getElementById("nextBtn").style.display = "none";
+    document.getElementById("exportBtn").style.display = "none";
+  }
+
+  // Receive section questions and answered info
+  socket.on("admin_section_questions", data => {
+    sectionQuestions = data.questions;
+    answeredStatus = data.answered;
+    renderQuestions();
+  });
+
+  function renderQuestions() {
+    const questionsDiv = document.getElementById("questionsDiv");
+    questionsDiv.innerHTML = "";
+    sectionQuestions.forEach((q, i) => {
+      const btn = document.createElement("button");
+      btn.innerText = `Q${i+1}: ${q.text}`;
+      btn.className = "question-btn " + (answeredStatus[i] ? "answered" : "unanswered");
+      btn.onclick = () => {
+        currentQuestionIndex = i;
+        socket.emit("new_question", i); // send specific question index to server
+        document.getElementById("revealBtn").style.display = "inline-block";
+        document.getElementById("timerBtn").style.display = "inline-block";
+        document.getElementById("nextBtn").style.display = "inline-block";
+        document.getElementById("exportBtn").style.display = "inline-block";
+      };
+      questionsDiv.appendChild(btn);
+    });
+  }
+
+  // Start participant timer
+  function startTimer() {
+    if (currentQuestionIndex === null) return;
+    socket.emit("start_timer"); // participants start 15s countdown
+    document.getElementById("timerBtn").style.display = "none";
+  }
+
+  // Reveal correct answer
+  function revealCorrect() {
+    if (currentQuestionIndex === null) return;
+    socket.emit("show_correct");
+    document.getElementById("revealBtn").style.display = "none";
+  }
+
+  // Move to next question sequentially
+  function nextQuestion() {
+    if (currentQuestionIndex === null) return;
+    const nextIndex = currentQuestionIndex + 1;
+    if (nextIndex < sectionQuestions.length) {
+      currentQuestionIndex = nextIndex;
+      socket.emit("new_question", nextIndex);
+      document.getElementById("timerBtn").style.display = "inline-block";
+      document.getElementById("revealBtn").style.display = "inline-block";
+    } else {
+      alert("End of section reached!");
+      currentQuestionIndex = null;
+      hideButtons();
+    }
+  }
+
+  // Export results as CSV
+  function exportResults() {
+    let csv = "Name,Score\n";
+    for (let name in scores) {
+      csv += `${name},${scores[name]}\n`;
+    }
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${currentSection}_results.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Update live participant list
+  socket.on("participants_update", data => {
+    document.getElementById("participants").innerText =
+      "Participants Live:\n" + JSON.stringify(data, null, 2);
+  });
+
+  // Update live answers before reveal
+  socket.on("answers_update", data => {
+    let text = "Pending Answers (not scored yet):\n";
+    for (let name in data.answers) {
+      text += `${name}: ${data.answers[name]}\n`;
+    }
+    document.getElementById("participants").innerText = text;
+  });
+
+  // Show results after correct answer
+  socket.on("correct_answer", data => {
+    scores = data.scores;
+    let text = `Correct Option: ${data.correctOption}\n\nResults:\n`;
+    for (let name in data.results) {
+      const res = data.results[name];
+      text += `${name}: ${res.answer} → ${res.correct ? "✅ Correct" : "❌ Wrong"}\n`;
+    }
+    text += `\nCumulative Scores:\n`;
+    for (let name in data.scores) {
+      text += `${name}: ${data.scores[name]}\n`;
+    }
+    document.getElementById("participants").innerText = text;
+
+    // Mark question as answered
+    if (data.section === currentSection) {
+      data.answeredStatus = data.answeredStatus;
+      renderQuestions();
+    }
+
+    // Update live leaderboard
+    renderLeaderboard();
+  });
+
+  function renderLeaderboard() {
+    const leaderboardDiv = document.getElementById("leaderboard");
+    let sorted = Object.entries(scores).sort((a,b) => b[1]-a[1]);
+    let text = "";
+    sorted.forEach(([name, score], idx) => {
+      text += `${idx+1}. ${name}: ${score}\n`;
+    });
+    leaderboardDiv.innerText = text;
+  }
 </script>
+
 </body>
 </html>
