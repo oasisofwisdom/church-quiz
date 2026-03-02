@@ -1,161 +1,130 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Oasis of Wisdom Bible Church - BBC 7.0 Admin</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f2f2f2; color:#333; }
-    header { background: #4CAF50; color:white; padding:15px; text-align:center; }
-    h2,h3 { margin:10px 0; }
-    .container { padding:15px; max-width:800px; margin:auto; }
-    .section-btn, .question-btn, .action-btn { margin:5px 0; padding:8px 12px; cursor:pointer; width:100%; font-size:16px; border:none; border-radius:5px; }
-    .section-btn { background:#2196F3; color:white; }
-    .question-btn.unanswered { background:#f44336; color:white; text-align:left; }
-    .question-btn.answered { background:#4CAF50; color:white; text-align:left; }
-    .action-btn { background:#FF9800; color:white; }
-    #participants, #leaderboard { white-space: pre-wrap; background:#fff; padding:10px; border-radius:5px; margin-top:10px; }
-    #timerDisplay { font-size:20px; font-weight:bold; margin-top:10px; }
-    footer { text-align:center; padding:15px; background:#333; color:white; margin-top:20px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BBC 7.0 Admin Dashboard</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fefbf6; }
+  header { background: #4CAF50; color: white; padding: 10px; text-align: center; }
+  h2 { margin: 0; font-size: 1.5em; }
+  .container { padding: 10px; max-width: 1000px; margin: auto; }
+  .section-btn, .question-btn, .action-btn { margin: 5px; padding: 8px 12px; cursor: pointer; border: none; border-radius: 4px; }
+  .section-btn { background: #2196F3; color: white; }
+  .question-btn.answered { background: #4CAF50; color: white; }
+  .question-btn.unanswered { background: #f44336; color: white; }
+  .action-btn { background: orange; color: white; }
+  #timer { font-size: 1.2em; font-weight: bold; margin: 10px 0; }
+  pre { background: #fff; padding: 10px; border-radius: 5px; max-height: 200px; overflow-y: auto; }
+  @media(max-width:600px){ .section-btn, .question-btn, .action-btn{ width: 100%; } }
+</style>
 </head>
 <body>
 
 <header>
-  <h2>Oasis of Wisdom Bible Church</h2>
-  <p>Back to the Bible Challenge (BBC) 7.0</p>
-  <small>Theme: Walking in Covenant Perfection | Matthew 5:48</small>
+  <h2>Oasis of Wisdom Bible Church - Back to the Bible Challenge 7.0</h2>
+  <p><em>Theme: Walking in Covenant Perfection | Matthew 5:48</em></p>
 </header>
 
 <div class="container">
-
   <h3>Sections</h3>
   <div id="sectionsDiv"></div>
 
-  <h3>Questions in Section</h3>
+  <h3>Questions</h3>
   <div id="questionsDiv"></div>
-  <button id="revealBtn" class="action-btn" style="display:none;" onclick="revealCorrect()">Show Correct Answer</button>
-  <button id="nextBtn" class="action-btn" onclick="nextQuestion()">Next Question</button>
-  <button id="waitingMsgBtn" class="action-btn" onclick="sendWaitingMessage()">Display Waiting Message</button>
-  <button id="startTimerBtn" class="action-btn" onclick="startTimer()">Start Timer (15s)</button>
 
-  <div id="timerDisplay">Timer: 0</div>
+  <div>
+    <button id="revealBtn" class="action-btn" style="display:none;">Show Correct Answer</button>
+    <button id="waitingBtn" class="action-btn">Display Waiting Message</button>
+    <button id="startTimerBtn" class="action-btn">Start 15s Timer</button>
+    <button onclick="exportResults()" class="action-btn">Export Results</button>
+    <div id="timer">Timer: 0</div>
+  </div>
 
   <h3>Participants Live / Answers / Scores</h3>
-  <pre id="participants"></pre>
+  <pre id="participants">No participants yet</pre>
 
-  <h3>Live Leaderboard</h3>
-  <pre id="leaderboard"></pre>
-
-  <button class="action-btn" onclick="exportResults()">Export Results (CSV)</button>
-
+  <h3>Leaderboard</h3>
+  <pre id="leaderboard">No scores yet</pre>
 </div>
-
-<footer>
-  BBC! The Word in my heart and acts.<br>
-  BB&C! Believing and Behaving the Bible
-</footer>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
   const socket = io();
-
+  let quizData = {};
   let currentSection = "";
   let sectionQuestions = [];
   let answeredStatus = [];
   let currentQuestionIndex = null;
   let timerInterval = null;
-  let timeLeft = 15;
+  let timerValue = 15;
 
-  // Render all sections
-  const sections = ["Joshua","1 Kings","Proverbs","Romans","James","General Bible Knowledge"];
-  const sectionsDiv = document.getElementById("sectionsDiv");
-  sections.forEach(sec => {
-    const btn = document.createElement("button");
-    btn.innerText = sec;
-    btn.className = "section-btn";
-    btn.onclick = () => {
-      socket.emit("start_section", sec);
-      currentSection = sec;
-      document.getElementById("questionsDiv").innerHTML = "";
-      document.getElementById("revealBtn").style.display = "none";
-    };
-    sectionsDiv.appendChild(btn);
-  });
-
-  // Receive section questions and answered info
-  socket.on("admin_section_questions", data => {
-    sectionQuestions = data.questions;
-    answeredStatus = data.answered;
-    renderQuestions();
-  });
+  // Load questions.json
+  fetch("/questions.json")
+    .then(res => res.json())
+    .then(data => {
+      quizData = data;
+      const sectionsDiv = document.getElementById("sectionsDiv");
+      sectionsDiv.innerHTML = "";
+      Object.keys(quizData).forEach(sec => {
+        const btn = document.createElement("button");
+        btn.innerText = sec;
+        btn.className = "section-btn";
+        btn.onclick = () => {
+          currentSection = sec;
+          sectionQuestions = quizData[sec];
+          answeredStatus = sectionQuestions.map(() => false);
+          renderQuestions();
+          socket.emit("start_section", sec);
+        };
+        sectionsDiv.appendChild(btn);
+      });
+    });
 
   function renderQuestions() {
     const questionsDiv = document.getElementById("questionsDiv");
     questionsDiv.innerHTML = "";
-    sectionQuestions.forEach((q,i) => {
+    sectionQuestions.forEach((q,i)=>{
       const btn = document.createElement("button");
       btn.innerText = `Q${i+1}: ${q.text}`;
       btn.className = "question-btn " + (answeredStatus[i] ? "answered" : "unanswered");
       btn.onclick = () => {
         currentQuestionIndex = i;
-        socket.emit("new_question");
+        socket.emit("new_question", { section: currentSection, index: i });
         document.getElementById("revealBtn").style.display = "inline-block";
       };
       questionsDiv.appendChild(btn);
     });
   }
 
-  function revealCorrect() {
-    if(currentQuestionIndex !== null){
-      socket.emit("show_correct");
-      stopTimer();
-    }
-  }
-
-  function nextQuestion() {
-    socket.emit("next_question");
-    document.getElementById("revealBtn").style.display = "none";
-    resetTimer();
-  }
-
-  function sendWaitingMessage(){
-    const msg = "Welcome to BBC 7.0 Quiz Page";
-    const submsg = "Waiting for Quiz Master to begin Quiz";
-    socket.emit("display_waiting_message", {main: msg, sub: submsg});
-  }
-
-  function startTimer() {
-    timeLeft = 15;
-    document.getElementById("timerDisplay").innerText = `Timer: ${timeLeft}`;
-    clearInterval(timerInterval);
-    timerInterval = setInterval(() => {
-      timeLeft--;
-      document.getElementById("timerDisplay").innerText = `Timer: ${timeLeft}`;
-      if(timeLeft <= 0) clearInterval(timerInterval);
-    }, 1000);
-    socket.emit("start_timer");
-  }
-
-  function stopTimer() {
-    clearInterval(timerInterval);
-  }
-
   function resetTimer() {
     clearInterval(timerInterval);
-    document.getElementById("timerDisplay").innerText = "Timer: 0";
+    timerValue = 15;
+    document.getElementById("timer").innerText = "Timer: " + timerValue;
   }
 
-  // Participants & answers
+  document.getElementById("startTimerBtn").onclick = () => {
+    timerValue = 15;
+    document.getElementById("timer").innerText = "Timer: " + timerValue;
+    socket.emit("start_timer");
+    clearInterval(timerInterval);
+    timerInterval = setInterval(()=>{
+      timerValue--;
+      document.getElementById("timer").innerText = "Timer: " + timerValue;
+      if(timerValue<=0) clearInterval(timerInterval);
+    },1000);
+  };
+
+  document.getElementById("revealBtn").onclick = () => socket.emit("show_correct");
+  document.getElementById("waitingBtn").onclick = () => socket.emit("display_waiting");
+
   socket.on("participants_update", data => {
-    document.getElementById("participants").innerText =
-      "Participants Live:\n" + JSON.stringify(data, null, 2);
+    document.getElementById("participants").innerText = "Participants Live:\n"+JSON.stringify(data,null,2);
   });
 
   socket.on("answers_update", data => {
     let text = "Pending Answers (not scored yet):\n";
-    for(let name in data.answers){
-      text += `${name}: ${data.answers[name]}\n`;
-    }
+    for(let name in data.answers) text += `${name}: ${data.answers[name]}\n`;
     document.getElementById("participants").innerText = text;
   });
 
@@ -163,7 +132,7 @@
     let text = `Correct Option: ${data.correctOption}\n\nResults:\n`;
     for(let name in data.results){
       const res = data.results[name];
-      text += `${name}: ${res.answer} → ${res.correct ? "✅ Correct" : "❌ Wrong"}\n`;
+      text += `${name}: ${res.answer} → ${res.correct?"✅ Correct":"❌ Wrong"}\n`;
     }
     text += `\nCumulative Scores:\n`;
     for(let name in data.scores) text += `${name}: ${data.scores[name]}\n`;
@@ -173,7 +142,6 @@
     resetTimer();
   });
 
-  // Leaderboard live
   socket.on("leaderboard_update", data => {
     let text = "";
     for(let name in data) text += `${name}: ${data[name]}\n`;
