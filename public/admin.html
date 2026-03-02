@@ -1,190 +1,192 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Admin Dashboard</title>
+  <meta charset="UTF-8">
+  <title>Oasis of Wisdom Bible Church - BBC 7.0 Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    .section-btn { margin: 5px; padding: 8px 12px; cursor: pointer; }
-    .question-btn { display: block; margin: 5px 0; padding: 5px; cursor: pointer; width: 100%; text-align: left; }
-    .answered { background-color: #4CAF50; color: white; }
-    .unanswered { background-color: #f44336; color: white; }
-    #revealBtn, #timerBtn, #nextBtn, #exportBtn { margin-top: 10px; padding: 8px 12px; cursor: pointer; }
-    #leaderboard { margin-top: 20px; }
+    body { font-family: 'Roboto', sans-serif; margin:0; background:#f9f9f9; color:#333; }
+    header { background:#4CAF50; color:white; padding:15px 20px; text-align:center; }
+    header h1 { margin:5px 0; font-size:24px; }
+    header h2 { margin:0; font-size:16px; font-weight:400; }
+    main { padding:20px; max-width:900px; margin:auto; }
+    h3 { color:#4CAF50; }
+    .section-btn, .question-btn, #revealBtn, #nextBtn, #exportBtn, #startTimerBtn {
+      margin:5px; padding:10px 15px; border:none; cursor:pointer; border-radius:6px; font-size:14px;
+      transition:0.3s;
+    }
+    .section-btn { background:#FFEB3B; color:#333; }
+    .section-btn:hover { background:#fdd835; }
+    .question-btn { display:block; width:100%; text-align:left; background:#f44336; color:white; }
+    .question-btn.answered { background:#4CAF50; }
+    .question-btn.unanswered { background:#f44336; }
+    .question-btn:hover { opacity:0.9; }
+    #revealBtn, #nextBtn, #exportBtn, #startTimerBtn { background:#FF9800; color:white; }
+    #revealBtn:hover, #nextBtn:hover, #exportBtn:hover, #startTimerBtn:hover { opacity:0.9; }
+    #participants { background:white; padding:15px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.1); white-space:pre-wrap; }
+    #leaderboard { margin-top:10px; border-collapse:collapse; width:100%; }
+    #leaderboard th, #leaderboard td { border:1px solid #ddd; padding:8px; text-align:left; }
+    #leaderboard th { background:#4CAF50; color:white; }
+    footer { background:#333; color:white; text-align:center; padding:15px; margin-top:30px; font-size:14px; }
+    .top-container { display:flex; justify-content:space-between; flex-wrap:wrap; align-items:center; }
+    .timer { font-size:18px; background:#FFEB3B; padding:8px 12px; border-radius:6px; color:#333; margin-left:auto; }
   </style>
 </head>
 <body>
+  <header>
+    <h1>Oasis of Wisdom Bible Church</h1>
+    <h2>Back to the Bible Challenge (BBC) 7.0</h2>
+    <p>Theme: Walking in Covenant Perfection - Matthew 5:48</p>
+  </header>
 
-<h2>Admin Dashboard</h2>
+  <main>
+    <div class="top-container">
+      <div>
+        <h3>Sections</h3>
+        <div id="sectionsDiv"></div>
+      </div>
+      <div class="timer">
+        Timer: <span id="timerDisplay">0</span>s
+        <button id="startTimerBtn">Start Timer</button>
+      </div>
+    </div>
 
-<h3>Sections</h3>
-<div id="sectionsDiv"></div>
+    <h3>Questions in Section</h3>
+    <div id="questionsDiv"></div>
 
-<h3>Questions in Section</h3>
-<div id="questionsDiv"></div>
+    <div style="margin-top:15px;">
+      <button id="revealBtn" onclick="revealCorrect()" style="display:none;">Show Correct Answer</button>
+      <button id="nextBtn" onclick="nextQuestion()" style="display:none;">Next Question</button>
+      <button id="exportBtn" onclick="exportResults()">Export Results</button>
+    </div>
 
-<button id="timerBtn" style="display:none;" onclick="startTimer()">Start Timer</button>
-<button id="revealBtn" style="display:none;" onclick="revealCorrect()">Show Correct Answer</button>
-<button id="nextBtn" style="display:none;" onclick="nextQuestion()">Next Question</button>
-<button id="exportBtn" style="display:none;" onclick="exportResults()">Export Results</button>
+    <h3>Participants Live / Answers / Scores</h3>
+    <pre id="participants"></pre>
 
-<h3>Participants Live / Answers / Scores</h3>
-<pre id="participants"></pre>
+    <h3>Leaderboard</h3>
+    <table id="leaderboard">
+      <thead>
+        <tr><th>Rank</th><th>Name</th><th>Score</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </main>
 
-<h3>Live Leaderboard</h3>
-<pre id="leaderboard"></pre>
+  <footer>
+    BBC! The Word in my heart and acts.<br>
+    BB&C! Believing and Behaving the Bible
+  </footer>
 
-<script src="/socket.io/socket.io.js"></script>
-<script>
-  const socket = io();
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
 
-  let currentSection = "";
-  let sectionQuestions = [];
-  let answeredStatus = [];
-  let currentQuestionIndex = null;
-  let scores = {};
+    let currentSection = "";
+    let sectionQuestions = [];
+    let answeredStatus = [];
+    let currentQuestionIndex = null;
 
-  // Render sections
-  const sections = ["Joshua","1 Kings","Proverbs","Romans","James","General Bible Knowledge"];
-  const sectionsDiv = document.getElementById("sectionsDiv");
-  sections.forEach(sec => {
-    const btn = document.createElement("button");
-    btn.innerText = sec;
-    btn.className = "section-btn";
-    btn.onclick = () => {
-      socket.emit("start_section", sec);
-      currentSection = sec;
-      document.getElementById("questionsDiv").innerHTML = "";
-      hideButtons();
-    };
-    sectionsDiv.appendChild(btn);
-  });
-
-  function hideButtons() {
-    document.getElementById("revealBtn").style.display = "none";
-    document.getElementById("timerBtn").style.display = "none";
-    document.getElementById("nextBtn").style.display = "none";
-    document.getElementById("exportBtn").style.display = "none";
-  }
-
-  // Receive section questions and answered info
-  socket.on("admin_section_questions", data => {
-    sectionQuestions = data.questions;
-    answeredStatus = data.answered;
-    renderQuestions();
-  });
-
-  function renderQuestions() {
-    const questionsDiv = document.getElementById("questionsDiv");
-    questionsDiv.innerHTML = "";
-    sectionQuestions.forEach((q, i) => {
+    // Render sections
+    const sections = ["Joshua","1 Kings","Proverbs","Romans","James","General Bible Knowledge"];
+    const sectionsDiv = document.getElementById("sectionsDiv");
+    sections.forEach(sec => {
       const btn = document.createElement("button");
-      btn.innerText = `Q${i+1}: ${q.text}`;
-      btn.className = "question-btn " + (answeredStatus[i] ? "answered" : "unanswered");
+      btn.innerText = sec;
+      btn.className = "section-btn";
       btn.onclick = () => {
-        currentQuestionIndex = i;
-        socket.emit("new_question", i); // send specific question index to server
-        document.getElementById("revealBtn").style.display = "inline-block";
-        document.getElementById("timerBtn").style.display = "inline-block";
-        document.getElementById("nextBtn").style.display = "inline-block";
-        document.getElementById("exportBtn").style.display = "inline-block";
+        socket.emit("start_section", sec);
+        currentSection = sec;
+        document.getElementById("questionsDiv").innerHTML = "";
+        document.getElementById("revealBtn").style.display = "none";
+        document.getElementById("nextBtn").style.display = "none";
       };
-      questionsDiv.appendChild(btn);
+      sectionsDiv.appendChild(btn);
     });
-  }
 
-  // Start participant timer
-  function startTimer() {
-    if (currentQuestionIndex === null) return;
-    socket.emit("start_timer"); // participants start 15s countdown
-    document.getElementById("timerBtn").style.display = "none";
-  }
-
-  // Reveal correct answer
-  function revealCorrect() {
-    if (currentQuestionIndex === null) return;
-    socket.emit("show_correct");
-    document.getElementById("revealBtn").style.display = "none";
-  }
-
-  // Move to next question sequentially
-  function nextQuestion() {
-    if (currentQuestionIndex === null) return;
-    const nextIndex = currentQuestionIndex + 1;
-    if (nextIndex < sectionQuestions.length) {
-      currentQuestionIndex = nextIndex;
-      socket.emit("new_question", nextIndex);
-      document.getElementById("timerBtn").style.display = "inline-block";
-      document.getElementById("revealBtn").style.display = "inline-block";
-    } else {
-      alert("End of section reached!");
-      currentQuestionIndex = null;
-      hideButtons();
-    }
-  }
-
-  // Export results as CSV
-  function exportResults() {
-    let csv = "Name,Score\n";
-    for (let name in scores) {
-      csv += `${name},${scores[name]}\n`;
-    }
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${currentSection}_results.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // Update live participant list
-  socket.on("participants_update", data => {
-    document.getElementById("participants").innerText =
-      "Participants Live:\n" + JSON.stringify(data, null, 2);
-  });
-
-  // Update live answers before reveal
-  socket.on("answers_update", data => {
-    let text = "Pending Answers (not scored yet):\n";
-    for (let name in data.answers) {
-      text += `${name}: ${data.answers[name]}\n`;
-    }
-    document.getElementById("participants").innerText = text;
-  });
-
-  // Show results after correct answer
-  socket.on("correct_answer", data => {
-    scores = data.scores;
-    let text = `Correct Option: ${data.correctOption}\n\nResults:\n`;
-    for (let name in data.results) {
-      const res = data.results[name];
-      text += `${name}: ${res.answer} → ${res.correct ? "✅ Correct" : "❌ Wrong"}\n`;
-    }
-    text += `\nCumulative Scores:\n`;
-    for (let name in data.scores) {
-      text += `${name}: ${data.scores[name]}\n`;
-    }
-    document.getElementById("participants").innerText = text;
-
-    // Mark question as answered
-    if (data.section === currentSection) {
-      data.answeredStatus = data.answeredStatus;
+    // Receive section questions
+    socket.on("admin_section_questions", data => {
+      sectionQuestions = data.questions;
+      answeredStatus = data.answered;
       renderQuestions();
+    });
+
+    function renderQuestions() {
+      const div = document.getElementById("questionsDiv");
+      div.innerHTML = "";
+      sectionQuestions.forEach((q,i)=>{
+        const btn = document.createElement("button");
+        btn.innerText = `Q${i+1}: ${q.text}`;
+        btn.className = "question-btn " + (answeredStatus[i] ? "answered" : "unanswered");
+        btn.onclick = ()=>{
+          currentQuestionIndex = i;
+          socket.emit("new_question");
+          document.getElementById("revealBtn").style.display = "inline-block";
+          document.getElementById("nextBtn").style.display = "inline-block";
+        };
+        div.appendChild(btn);
+      });
     }
 
-    // Update live leaderboard
-    renderLeaderboard();
-  });
+    function revealCorrect(){
+      if(currentQuestionIndex!==null) socket.emit("show_correct");
+    }
 
-  function renderLeaderboard() {
-    const leaderboardDiv = document.getElementById("leaderboard");
-    let sorted = Object.entries(scores).sort((a,b) => b[1]-a[1]);
-    let text = "";
-    sorted.forEach(([name, score], idx) => {
-      text += `${idx+1}. ${name}: ${score}\n`;
+    function nextQuestion(){
+      socket.emit("next_question");
+      document.getElementById("revealBtn").style.display="none";
+      document.getElementById("nextBtn").style.display="none";
+    }
+
+    function exportResults(){
+      socket.emit("export_results");
+      alert("Results exported on server.");
+    }
+
+    document.getElementById("startTimerBtn").onclick = ()=>{
+      socket.emit("start_timer");
+    };
+
+    // Update participants
+    socket.on("participants_update", data=>{
+      document.getElementById("participants").innerText = "Participants Live:\n"+JSON.stringify(data,null,2);
     });
-    leaderboardDiv.innerText = text;
-  }
-</script>
 
+    // Update answers live
+    socket.on("answers_update", data=>{
+      let text = "Pending Answers (not scored yet):\n";
+      for(let name in data.answers) text+=`${name}: ${data.answers[name]}\n`;
+      document.getElementById("participants").innerText=text;
+    });
+
+    // Show correct
+    socket.on("correct_answer", data=>{
+      let text=`Correct Option: ${data.correctOption}\n\nResults:\n`;
+      for(let name in data.results){
+        const res = data.results[name];
+        text+=`${name}: ${res.answer} → ${res.correct?"✅ Correct":"❌ Wrong"}\n`;
+      }
+      text+="\nCumulative Scores:\n";
+      for(let name in data.scores) text+=`${name}: ${data.scores[name]}\n`;
+      document.getElementById("participants").innerText=text;
+
+      if(data.section===currentSection){
+        answeredStatus[data.questionIndex]=true;
+        renderQuestions();
+      }
+      document.getElementById("revealBtn").style.display="none";
+    });
+
+    // Update leaderboard
+    socket.on("leaderboard_update", scores=>{
+      const tbody = document.querySelector("#leaderboard tbody");
+      tbody.innerHTML="";
+      const sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+      sorted.forEach((entry,i)=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML=`<td>${i+1}</td><td>${entry[0]}</td><td>${entry[1]}</td>`;
+        tbody.appendChild(tr);
+      });
+    });
+  </script>
 </body>
 </html>
