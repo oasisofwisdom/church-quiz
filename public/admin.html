@@ -15,10 +15,16 @@
   button { background:#2e7d32; color:white; cursor:pointer; border:none; }
   button:hover { background:#1b5e20; }
 
-  #sectionsContainer { margin-bottom:20px; }
-  #questionList { margin-bottom:20px; }
-  #participants, #leaderboard { white-space: pre-wrap; background:#e8f5e9; padding:10px; border-radius:8px; margin-bottom:10px; min-height:60px; }
+  #controls { margin-bottom:20px; }
+  #questionCard { border:1px solid #ccc; border-radius:12px; padding:20px; margin-bottom:20px; background:#e8f5e9; min-height:150px; }
+  #participants, #leaderboard { white-space: pre-wrap; background:#f1f8e9; padding:10px; border-radius:8px; margin-bottom:10px; min-height:60px; }
   #timer { font-size:20px; color:#d32f2f; margin:10px 0; }
+
+  .option { display:block; margin:10px 0; padding:10px; border-radius:8px; background:#c8e6c9; cursor:pointer; border:1px solid #2e7d32; }
+  .option.correct { background:#81c784; }
+  .option.wrong { background:#e57373; }
+
+  footer { text-align:center; font-size:12px; margin-top:20px; color:#555; }
 </style>
 </head>
 <body>
@@ -39,21 +45,22 @@
 
   <div id="controls">
     <button id="showWaitingBtn">Display Waiting Message</button>
-    <button id="newQuestionBtn">Next Question</button>
-    <button id="showCorrectBtn">Show Correct Answer</button>
+    <button id="sendQuestionBtn">Send Question to Participants</button>
+    <button id="showCorrectBtn">Reveal Correct Answer</button>
+    <button id="nextQuestionBtn">Next Question</button>
     <button id="startTimerBtn">Start Timer</button>
     <button id="exportBtn">Export Results</button>
     <div id="timer">0</div>
   </div>
 
-  <div id="questionList"></div>
+  <div id="questionCard">No question selected yet</div>
   <h3>Participants / Answers</h3>
   <div id="participants">Waiting for participants...</div>
   <h3>Leaderboard</h3>
   <div id="leaderboard">No scores yet</div>
 </main>
 
-<footer style="text-align:center; font-size:12px; margin-top:20px; color:#555;">
+<footer>
   BBC! The Word in my heart and acts.<br>
   BB&C! Believing and Behaving the Bible
 </footer>
@@ -62,25 +69,28 @@
 <script>
 const socket = io();
 let questions = {};
+let currentSection = '';
+let questionIndex = 0;
+let currentQuestion = {};
 let answeredStatus = [];
+let answers = {};
 let timerInterval = null;
 let timeLeft = 0;
-let currentSection = "";
 
-// ====================
-// Load sections from server
-// ====================
-socket.emit('get_sections');
-socket.on('sections_list', data => {
-  const select = document.getElementById('sectionSelect');
-  select.innerHTML = '<option value="">--Select Section--</option>';
-  data.forEach(sec => {
-    const opt = document.createElement('option');
-    opt.value = sec;
-    opt.innerText = sec;
-    select.appendChild(opt);
-  });
-});
+// Load sections from questions.json
+fetch('/questions.json')
+  .then(res => res.json())
+  .then(data => {
+    questions = data;
+    const select = document.getElementById('sectionSelect');
+    Object.keys(questions).forEach(sec => {
+      const opt = document.createElement('option');
+      opt.value = sec;
+      opt.innerText = sec;
+      select.appendChild(opt);
+    });
+  })
+  .catch(err => console.error("Failed to load questions.json:", err));
 
 // ====================
 // Button events
@@ -89,42 +99,62 @@ document.getElementById('startSectionBtn').onclick = () => {
   const section = document.getElementById('sectionSelect').value;
   if(!section) return alert('Select a section');
   currentSection = section;
+  questionIndex = 0;
+  answeredStatus = questions[section].map(() => false);
   socket.emit('start_section', section);
+  renderQuestion();
 };
 
 document.getElementById('showWaitingBtn').onclick = () => socket.emit('waiting_message');
-document.getElementById('newQuestionBtn').onclick = () => socket.emit('new_question');
+
+document.getElementById('sendQuestionBtn').onclick = () => {
+  socket.emit('new_question');
+};
+
 document.getElementById('showCorrectBtn').onclick = () => socket.emit('show_correct');
-document.getElementById('startTimerBtn').onclick = () => socket.emit('start_timer');
-document.getElementById('exportBtn').onclick = () => { socket.emit('export_results'); alert("Results exported to server CSV file."); };
+
+document.getElementById('nextQuestionBtn').onclick = () => {
+  questionIndex++;
+  if(questionIndex >= questions[currentSection].length){
+    alert('Section completed');
+    return;
+  }
+  renderQuestion();
+};
+
+document.getElementById('startTimerBtn').onclick = () => startTimer(15);
+
+document.getElementById('exportBtn').onclick = () => {
+  socket.emit('export_results');
+  alert("Results exported to server CSV file.");
+};
 
 // ====================
 // Socket events
 // ====================
 socket.on('participants_update', data => {
   let text = "";
-  for(let id in data) text += `${data[id].name} (${data[id].examNumber})\n`;
+  for(let id in data){
+    text += `${data[id].name} (${data[id].examNumber})\n`;
+  }
   document.getElementById('participants').innerText = text || "Waiting for participants...";
 });
 
 socket.on('answers_update', data => {
-  let text = "Pending Answers:\n";
-  for(let name in data.answers) text += `${name}: ${data.answers[name]}\n`;
-  document.getElementById('participants').innerText = text;
+  answers = data.answers;
+  updateAnswers();
 });
 
 socket.on('correct_answer', data => {
-  let text = `Correct Option: ${data.correctOption}\n\nResults:\n`;
-  for(let name in data.results){
-    const res = data.results[name];
-    text += `${name}: ${res.answer} → ${res.correct ? "✅ Correct" : "❌ Wrong"}\n`;
-  }
-  text += `\nCumulative Scores:\n`;
-  for(let name in data.scores) text += `${name}: ${data.scores[name]}\n`;
-  document.getElementById('participants').innerText = text;
-
+  const card = document.getElementById('questionCard');
+  const correct = data.correctOption;
+  const options = card.querySelectorAll('.option');
+  options.forEach(opt=>{
+    if(opt.dataset.option === correct) opt.classList.add('correct');
+    else if(answers[opt.dataset.name] && answers[opt.dataset.name]===opt.dataset.option) opt.classList.add('wrong');
+  });
   answeredStatus[data.questionIndex] = true;
-  renderQuestions();
+  updateAnswers();
   resetTimer();
 });
 
@@ -134,15 +164,8 @@ socket.on('leaderboard_update', data => {
   document.getElementById('leaderboard').innerText = text;
 });
 
-socket.on('admin_section_questions', data => {
-  currentSection = data.section;
-  answeredStatus = data.answered;
-  questions[currentSection] = data.questions;
-  renderQuestions();
-});
-
 socket.on('waiting_message', data => {
-  document.getElementById('participants').innerText = data.text;
+  document.getElementById('questionCard').innerText = data.text;
 });
 
 socket.on('start_timer', () => startTimer(15));
@@ -150,15 +173,25 @@ socket.on('start_timer', () => startTimer(15));
 // ====================
 // Functions
 // ====================
-function renderQuestions(){
-  const container = document.getElementById('questionList');
-  container.innerHTML = '';
-  if(!questions[currentSection]) return;
-  questions[currentSection].forEach((q,i)=>{
-    const div = document.createElement('div');
-    div.innerText = `${i+1}. ${q.text} ${answeredStatus[i]? '✅':'❌'}`;
-    container.appendChild(div);
+function renderQuestion(){
+  const card = document.getElementById('questionCard');
+  const q = questions[currentSection][questionIndex];
+  currentQuestion = q;
+  answers = {};
+  card.innerHTML = `<h3>Q${questionIndex+1}: ${q.text}</h3>`;
+  q.options.forEach(opt=>{
+    const btn = document.createElement('div');
+    btn.className='option';
+    btn.innerText = opt;
+    btn.dataset.option = opt;
+    card.appendChild(btn);
   });
+  socket.emit('new_question'); // send to participants
+}
+
+function updateAnswers(){
+  const text = Object.keys(answers).map(n=>`${n}: ${answers[n]}`).join('\n');
+  document.getElementById('participants').innerText = text || "No answers yet";
 }
 
 function startTimer(seconds){
