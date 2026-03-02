@@ -1,130 +1,197 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BBC 7.0 Quiz</title>
-<style>
-  body { font-family: Arial; margin:0; padding:0; background:#fefbf6; text-align:center;}
-  header { background:#4CAF50; color:white; padding:10px; }
-  .container { padding:10px; max-width:600px; margin:auto;}
-  input { padding:8px; width:90%; margin:5px 0; }
-  button { padding:10px 15px; margin:5px; border:none; border-radius:5px; cursor:pointer; }
-  .option-btn { display:block; width:100%; margin:5px 0; padding:10px; cursor:pointer; }
-  .correct { background:#4CAF50; color:white; }
-  .wrong { background:#f44336; color:white; }
-  #questionDiv { margin-top:20px; display:none; }
-  #message { font-style:italic; margin-top:15px; color:#555; }
-  #scoreDiv { margin-top:15px; display:none; }
-  @media(max-width:600px){ input, button{ width:100%; } }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BBC 7.0 Quiz - Oasis of Wisdom Bible Church</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom, #ffffff, #e0f2f1);
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #2e7d32;
+      color: #fff;
+      text-align: center;
+      padding: 20px 10px;
+    }
+    header h1 { margin: 0; font-size: 24px; }
+    header p { margin: 5px 0 0; font-style: italic; font-size: 14px; }
+
+    main {
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 10px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    #loginForm, #quizSection {
+      display: flex;
+      flex-direction: column;
+    }
+    input[type="text"], input[type="number"] {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      background: #2e7d32;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover { background: #1b5e20; }
+
+    #welcomeMessage {
+      font-size: 18px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    #waitingMessage {
+      font-size: 14px;
+      font-style: italic;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    #questionText { font-size: 18px; margin: 10px 0; }
+    .optionBtn {
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 8px;
+      border: 1px solid #2e7d32;
+      background: #e8f5e9;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .optionBtn:hover { background: #c8e6c9; }
+    #timer { font-size: 20px; color: #d32f2f; margin: 10px 0; text-align: center; }
+    footer {
+      text-align: center;
+      margin-top: 20px;
+      padding: 10px;
+      font-size: 12px;
+      color: #555;
+    }
+  </style>
 </head>
 <body>
+  <header>
+    <h1>Oasis of Wisdom Bible Church</h1>
+    <p>Back to the Bible Challenge (BBC) 7.0</p>
+    <p><em>Theme: Walking in Covenant Perfection. Matthew 5:48</em></p>
+  </header>
 
-<header>
-  <h2>Oasis of Wisdom Bible Church - BBC 7.0</h2>
-  <p><em>Theme: Walking in Covenant Perfection | Matthew 5:48</em></p>
-</header>
-
-<div class="container">
-  <div id="joinDiv">
-    <input id="name" placeholder="Your Name"><br>
-    <input id="exam" placeholder="Exam Number"><br>
-    <button id="joinBtn">Join Quiz</button>
-  </div>
-
-  <div id="quizDiv" style="display:none;">
-    <div id="message">
-      Welcome to BBC 7.0 Quiz Page.<br>
-      <span id="waitMsg">Waiting for Quiz Master to begin Quiz...</span>
+  <main>
+    <div id="loginForm">
+      <input type="text" id="nameInput" placeholder="Enter Your Name">
+      <input type="number" id="examNumberInput" placeholder="Enter Your Exam Number">
+      <button id="joinBtn">Join Quiz</button>
     </div>
 
-    <div id="questionDiv">
-      <h3 id="questionText"></h3>
-      <div id="options"></div>
+    <div id="quizSection" style="display:none;">
+      <div id="welcomeMessage">Welcome to BBC 7.0 Quiz Page</div>
+      <div id="waitingMessage">Waiting for Quiz Master to begin the Quiz...</div>
+      <div id="questionText"></div>
+      <div id="optionsContainer"></div>
+      <div id="timer">0</div>
     </div>
+  </main>
 
-    <div id="timerDiv">Timer: <span id="timer">0</span></div>
+  <footer>
+    BBC! The Word in my heart and acts.<br>
+    BB&C! Believing and Behaving the Bible
+  </footer>
 
-    <div id="scoreDiv">
-      <h3>Your Score</h3>
-      <p id="scoreText">0</p>
-    </div>
-  </div>
-</div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
 
-<script src="/socket.io/socket.io.js"></script>
-<script>
-  const socket = io();
-  let myName = "";
-  let myScore = 0;
-  let selectedBtn = null;
-  let timerInterval = null;
+    let name = "";
+    let examNumber = "";
 
-  document.getElementById("joinBtn").onclick = () => {
-    const name = document.getElementById("name").value.trim();
-    const exam = document.getElementById("exam").value.trim();
-    if(!name || !exam){ alert("Enter both fields."); return; }
-    myName = name;
-    socket.emit("join", {name, examNumber:exam});
-    document.getElementById("joinDiv").style.display="none";
-    document.getElementById("quizDiv").style.display="block";
-    document.getElementById("scoreDiv").style.display="block";
-  };
+    const loginForm = document.getElementById("loginForm");
+    const quizSection = document.getElementById("quizSection");
+    const welcomeMessage = document.getElementById("welcomeMessage");
+    const waitingMessage = document.getElementById("waitingMessage");
+    const questionText = document.getElementById("questionText");
+    const optionsContainer = document.getElementById("optionsContainer");
+    const timerDiv = document.getElementById("timer");
 
-  socket.on("question", q=>{
-    document.getElementById("message").style.display="none";
-    document.getElementById("questionDiv").style.display="block";
-    document.getElementById("questionText").innerText = q.text;
+    let currentQuestion = {};
+    let timerInterval = null;
+    let timeLeft = 0;
 
-    const optionsDiv = document.getElementById("options");
-    optionsDiv.innerHTML="";
-    selectedBtn = null;
+    // Join quiz
+    document.getElementById("joinBtn").onclick = () => {
+      name = document.getElementById("nameInput").value.trim();
+      examNumber = document.getElementById("examNumberInput").value.trim();
+      if (!name || !examNumber) return alert("Enter both Name and Exam Number");
+      socket.emit("join", { name, examNumber });
+      loginForm.style.display = "none";
+      quizSection.style.display = "block";
+    };
 
-    q.options.forEach(opt=>{
-      const btn = document.createElement("button");
-      btn.innerText = opt;
-      btn.className = "option-btn";
-      btn.onclick = ()=>{
-        socket.emit("answer",{answer:opt});
-        selectedBtn = btn;
-        Array.from(optionsDiv.children).forEach(b=>b.disabled=true);
-      };
-      optionsDiv.appendChild(btn);
+    // Receive new question
+    socket.on("question", q => {
+      currentQuestion = q;
+      questionText.innerText = q.text;
+      waitingMessage.style.display = "none";
+
+      optionsContainer.innerHTML = "";
+      q.options.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.innerText = opt;
+        btn.className = "optionBtn";
+        btn.onclick = () => {
+          socket.emit("answer", { answer: opt });
+          // optionally disable buttons after answer
+          Array.from(optionsContainer.children).forEach(b => b.disabled = true);
+        };
+        optionsContainer.appendChild(btn);
+      });
     });
-  });
 
-  socket.on("start_timer", ()=>{
-    clearInterval(timerInterval);
-    let t = 15;
-    document.getElementById("timer").innerText = t;
-    timerInterval = setInterval(()=>{
-      t--;
-      document.getElementById("timer").innerText = t;
-      if(t<=0) clearInterval(timerInterval);
-    },1000);
-  });
-
-  socket.on("correct_answer", data=>{
-    const optionsDiv = document.getElementById("options");
-    const correctOpt = data.correctOption;
-    Array.from(optionsDiv.children).forEach(btn=>{
-      if(btn.innerText.startsWith(correctOpt)) btn.classList.add("correct");
-      else if(selectedBtn && btn.innerText===selectedBtn.innerText) btn.classList.add("wrong");
-      btn.disabled=true;
+    // Receive admin messages
+    socket.on("admin_message", msg => {
+      waitingMessage.style.display = "block";
+      waitingMessage.innerText = msg;
+      questionText.innerText = "";
+      optionsContainer.innerHTML = "";
+      resetTimer();
     });
-    if(myName in data.scores){
-      myScore = data.scores[myName];
-      document.getElementById("scoreText").innerText=myScore;
+
+    // Timer from admin
+    socket.on("start_timer", () => {
+      startTimer(15);
+    });
+
+    function startTimer(seconds) {
+      clearInterval(timerInterval);
+      timeLeft = seconds;
+      timerDiv.innerText = timeLeft;
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        timerDiv.innerText = timeLeft;
+        if (timeLeft <= 0) clearInterval(timerInterval);
+      }, 1000);
     }
-  });
 
-  socket.on("display_message", msg=>{
-    document.getElementById("questionDiv").style.display="none";
-    document.getElementById("message").style.display="block";
-    document.getElementById("waitMsg").innerText = msg;
-  });
-</script>
+    function resetTimer() {
+      clearInterval(timerInterval);
+      timerDiv.innerText = 0;
+    }
 
+  </script>
 </body>
 </html>
