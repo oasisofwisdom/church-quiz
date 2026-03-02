@@ -58,15 +58,23 @@ io.on("connection", socket => {
   // Admin starts a section
   socket.on("start_section", section => {
     if (!sections[section]) return;
+
     currentSection = section;
     questionIndex = 0;
+    currentQuestion = sections[section][0] || {};
+    answers = {};
     answeredQuestions[section] = sections[section].map(() => false);
+
     io.emit("section_started", section);
     io.emit("admin_section_questions", {
       section,
       questions: sections[section],
       answered: answeredQuestions[section]
     });
+
+    // Send first question automatically
+    io.emit("question", currentQuestion);
+    io.emit("answers_update", { answers });
   });
 
   // Admin sends next question
@@ -104,15 +112,15 @@ io.on("connection", socket => {
   socket.on("show_correct", () => {
     const results = {};
     for (let name in answers) {
-      const correct = answers[name].startsWith(currentQuestion.correct);
-      if (correct) scores[name] += 1;
+      const correct = answers[name] === currentQuestion.answer; // use 'answer' key
+      if (correct) scores[name] = (scores[name] || 0) + 1;
       results[name] = { answer: answers[name], correct };
     }
 
     answeredQuestions[currentSection][questionIndex] = true;
 
     io.emit("correct_answer", {
-      correctOption: currentQuestion.correct,
+      correctOption: currentQuestion.answer,
       results,
       scores,
       section: currentSection,
@@ -127,7 +135,7 @@ io.on("connection", socket => {
     questionIndex++;
     const sectionQuestions = sections[currentSection];
 
-    if (questionIndex < sectionQuestions.length) {
+    if (sectionQuestions && questionIndex < sectionQuestions.length) {
       currentQuestion = sectionQuestions[questionIndex];
       answers = {};
       io.emit("question", currentQuestion);
@@ -135,6 +143,8 @@ io.on("connection", socket => {
     } else {
       io.emit("section_complete", currentSection);
       questionIndex = 0;
+      currentSection = "";
+      currentQuestion = {};
     }
   });
 
