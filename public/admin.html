@@ -4,36 +4,18 @@
   <title>Oasis of Wisdom Bible Church - BBC 7.0 Admin</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0; padding: 0;
-      background: #f2f2f2;
-      color: #333;
-    }
-    header {
-      background: #4CAF50;
-      color: white;
-      padding: 15px;
-      text-align: center;
-    }
-    h2, h3 { margin: 10px 0; }
-    .container { padding: 15px; max-width: 800px; margin: auto; }
-    .section-btn, .question-btn, .action-btn {
-      margin: 5px 0;
-      padding: 8px 12px;
-      cursor: pointer;
-      width: 100%;
-      font-size: 16px;
-      border: none;
-      border-radius: 5px;
-    }
-    .section-btn { background: #2196F3; color: white; }
-    .question-btn.unanswered { background: #f44336; color: white; text-align: left; }
-    .question-btn.answered { background: #4CAF50; color: white; text-align: left; }
-    .action-btn { background: #FF9800; color: white; }
-    #participants, #leaderboard { white-space: pre-wrap; background: #fff; padding: 10px; border-radius: 5px; margin-top: 10px; }
-    #timerDisplay { font-size: 20px; font-weight: bold; margin-top: 10px; }
-    footer { text-align: center; padding: 15px; background: #333; color: white; margin-top: 20px; }
+    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f2f2f2; color:#333; }
+    header { background: #4CAF50; color:white; padding:15px; text-align:center; }
+    h2,h3 { margin:10px 0; }
+    .container { padding:15px; max-width:800px; margin:auto; }
+    .section-btn, .question-btn, .action-btn { margin:5px 0; padding:8px 12px; cursor:pointer; width:100%; font-size:16px; border:none; border-radius:5px; }
+    .section-btn { background:#2196F3; color:white; }
+    .question-btn.unanswered { background:#f44336; color:white; text-align:left; }
+    .question-btn.answered { background:#4CAF50; color:white; text-align:left; }
+    .action-btn { background:#FF9800; color:white; }
+    #participants, #leaderboard { white-space: pre-wrap; background:#fff; padding:10px; border-radius:5px; margin-top:10px; }
+    #timerDisplay { font-size:20px; font-weight:bold; margin-top:10px; }
+    footer { text-align:center; padding:15px; background:#333; color:white; margin-top:20px; }
   </style>
 </head>
 <body>
@@ -54,6 +36,7 @@
   <button id="revealBtn" class="action-btn" style="display:none;" onclick="revealCorrect()">Show Correct Answer</button>
   <button id="nextBtn" class="action-btn" onclick="nextQuestion()">Next Question</button>
   <button id="waitingMsgBtn" class="action-btn" onclick="sendWaitingMessage()">Display Waiting Message</button>
+  <button id="startTimerBtn" class="action-btn" onclick="startTimer()">Start Timer (15s)</button>
 
   <div id="timerDisplay">Timer: 0</div>
 
@@ -64,7 +47,7 @@
   <pre id="leaderboard"></pre>
 
   <button class="action-btn" onclick="exportResults()">Export Results (CSV)</button>
-  
+
 </div>
 
 <footer>
@@ -109,7 +92,7 @@
   function renderQuestions() {
     const questionsDiv = document.getElementById("questionsDiv");
     questionsDiv.innerHTML = "";
-    sectionQuestions.forEach((q, i) => {
+    sectionQuestions.forEach((q,i) => {
       const btn = document.createElement("button");
       btn.innerText = `Q${i+1}: ${q.text}`;
       btn.className = "question-btn " + (answeredStatus[i] ? "answered" : "unanswered");
@@ -123,7 +106,7 @@
   }
 
   function revealCorrect() {
-    if (currentQuestionIndex !== null) {
+    if(currentQuestionIndex !== null){
       socket.emit("show_correct");
       stopTimer();
     }
@@ -148,9 +131,13 @@
     timerInterval = setInterval(() => {
       timeLeft--;
       document.getElementById("timerDisplay").innerText = `Timer: ${timeLeft}`;
-      if (timeLeft <= 0) clearInterval(timerInterval);
+      if(timeLeft <= 0) clearInterval(timerInterval);
     }, 1000);
-    socket.emit("start_timer"); // notify participants
+    socket.emit("start_timer");
+  }
+
+  function stopTimer() {
+    clearInterval(timerInterval);
   }
 
   function resetTimer() {
@@ -166,21 +153,20 @@
 
   socket.on("answers_update", data => {
     let text = "Pending Answers (not scored yet):\n";
-    for (let name in data.answers) {
+    for(let name in data.answers){
       text += `${name}: ${data.answers[name]}\n`;
     }
     document.getElementById("participants").innerText = text;
   });
 
-  // Correct answer revealed
   socket.on("correct_answer", data => {
     let text = `Correct Option: ${data.correctOption}\n\nResults:\n`;
-    for (let name in data.results) {
+    for(let name in data.results){
       const res = data.results[name];
       text += `${name}: ${res.answer} → ${res.correct ? "✅ Correct" : "❌ Wrong"}\n`;
     }
     text += `\nCumulative Scores:\n`;
-    for (let name in data.scores) text += `${name}: ${data.scores[name]}\n`;
+    for(let name in data.scores) text += `${name}: ${data.scores[name]}\n`;
     document.getElementById("participants").innerText = text;
     answeredStatus[data.questionIndex] = true;
     renderQuestions();
@@ -190,11 +176,10 @@
   // Leaderboard live
   socket.on("leaderboard_update", data => {
     let text = "";
-    for (let name in data) text += `${name}: ${data[name]}\n`;
+    for(let name in data) text += `${name}: ${data[name]}\n`;
     document.getElementById("leaderboard").innerText = text;
   });
 
-  // Export results
   function exportResults() {
     socket.emit("export_results");
     alert("Results exported to server CSV file.");
