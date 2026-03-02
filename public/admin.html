@@ -11,18 +11,20 @@
   header p { margin:2px 0; font-size:14px; font-style:italic; }
 
   main { max-width:900px; margin:20px auto; padding:10px; background:white; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+
   select, button { padding:10px; font-size:16px; margin:5px 0; border-radius:8px; border:1px solid #ccc; }
   button { background:#2e7d32; color:white; cursor:pointer; border:none; }
   button:hover { background:#1b5e20; }
 
   #controls { margin-bottom:20px; }
-  #questionCard { border:1px solid #ccc; border-radius:12px; padding:20px; margin-bottom:20px; background:#e8f5e9; min-height:150px; }
-  #participants, #leaderboard { white-space: pre-wrap; background:#f1f8e9; padding:10px; border-radius:8px; margin-bottom:10px; min-height:60px; }
-  #timer { font-size:20px; color:#d32f2f; margin:10px 0; }
+  #questionList { margin-bottom:20px; display:flex; flex-wrap:wrap; gap:12px; }
+  .card { background:white; border:1px solid #ccc; border-radius:12px; padding:15px; width:100%; max-width:400px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  .card h4 { margin-top:0; }
+  .options button { display:block; margin:5px 0; width:100%; border-radius:8px; text-align:left; }
+  .correct { background:#c8e6c9; }
+  .wrong { background:#ffcdd2; }
 
-  .option { display:block; margin:10px 0; padding:10px; border-radius:8px; background:#c8e6c9; cursor:pointer; border:1px solid #2e7d32; }
-  .option.correct { background:#81c784; }
-  .option.wrong { background:#e57373; }
+  #participants, #leaderboard { white-space: pre-wrap; background:#e8f5e9; padding:10px; border-radius:8px; margin-bottom:10px; min-height:60px; }
 
   footer { text-align:center; font-size:12px; margin-top:20px; color:#555; }
 </style>
@@ -40,22 +42,21 @@
     <select id="sectionSelect">
       <option value="">--Select Section--</option>
     </select>
-    <button id="startSectionBtn">Start Section</button>
+    <button id="startSectionBtn">Load Section</button>
   </div>
 
   <div id="controls">
-    <button id="showWaitingBtn">Display Waiting Message</button>
-    <button id="sendQuestionBtn">Send Question to Participants</button>
-    <button id="showCorrectBtn">Reveal Correct Answer</button>
     <button id="nextQuestionBtn">Next Question</button>
-    <button id="startTimerBtn">Start Timer</button>
+    <button id="revealAnswerBtn">Reveal Answer</button>
     <button id="exportBtn">Export Results</button>
-    <div id="timer">0</div>
   </div>
 
-  <div id="questionCard">No question selected yet</div>
+  <h3>Current Question</h3>
+  <div id="questionList"></div>
+
   <h3>Participants / Answers</h3>
   <div id="participants">Waiting for participants...</div>
+
   <h3>Leaderboard</h3>
   <div id="leaderboard">No scores yet</div>
 </main>
@@ -68,16 +69,15 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
-let questions = {};
-let currentSection = '';
-let questionIndex = 0;
-let currentQuestion = {};
-let answeredStatus = [];
-let answers = {};
-let timerInterval = null;
-let timeLeft = 0;
 
-// Load sections from questions.json
+let questions = {};
+let currentSection = "";
+let currentIndex = -1;
+let currentQuestion = {};
+let participantAnswers = {};
+let scores = {};
+
+// Load questions.json
 fetch('/questions.json')
   .then(res => res.json())
   .then(data => {
@@ -92,70 +92,60 @@ fetch('/questions.json')
   })
   .catch(err => console.error("Failed to load questions.json:", err));
 
-// ====================
-// Button events
-// ====================
+// ===================
+// Admin Button Events
+// ===================
 document.getElementById('startSectionBtn').onclick = () => {
   const section = document.getElementById('sectionSelect').value;
   if(!section) return alert('Select a section');
   currentSection = section;
-  questionIndex = 0;
-  answeredStatus = questions[section].map(() => false);
+  currentIndex = -1;
   socket.emit('start_section', section);
-  renderQuestion();
+  renderCurrentQuestion();
 };
-
-document.getElementById('showWaitingBtn').onclick = () => socket.emit('waiting_message');
-
-document.getElementById('sendQuestionBtn').onclick = () => {
-  socket.emit('new_question');
-};
-
-document.getElementById('showCorrectBtn').onclick = () => socket.emit('show_correct');
 
 document.getElementById('nextQuestionBtn').onclick = () => {
-  questionIndex++;
-  if(questionIndex >= questions[currentSection].length){
-    alert('Section completed');
+  if(!currentSection) return alert("Select a section first");
+  currentIndex++;
+  if(currentIndex >= questions[currentSection].length) {
+    alert("All questions completed");
+    currentIndex = questions[currentSection].length - 1;
     return;
   }
-  renderQuestion();
+  currentQuestion = questions[currentSection][currentIndex];
+  participantAnswers = {};
+  socket.emit('send_question', { section: currentSection, question: currentQuestion, index: currentIndex });
+  renderCurrentQuestion();
 };
 
-document.getElementById('startTimerBtn').onclick = () => startTimer(15);
+document.getElementById('revealAnswerBtn').onclick = () => {
+  if(!currentQuestion || !currentSection) return;
+  const results = {};
+  for(let name in participantAnswers){
+    const ans = participantAnswers[name];
+    const correct = ans === currentQuestion.answer;
+    if(correct) scores[name] = (scores[name]||0) +1;
+    results[name] = { answer: ans, correct };
+  }
+  socket.emit('reveal_answer', { results, correctOption: currentQuestion.answer, index: currentIndex });
+  renderCurrentQuestion(results);
+};
 
 document.getElementById('exportBtn').onclick = () => {
   socket.emit('export_results');
   alert("Results exported to server CSV file.");
 };
 
-// ====================
-// Socket events
-// ====================
+// ===================
+// Socket Events
+// ===================
 socket.on('participants_update', data => {
   let text = "";
   for(let id in data){
     text += `${data[id].name} (${data[id].examNumber})\n`;
+    if(!(data[id].name in scores)) scores[data[id].name] = 0;
   }
   document.getElementById('participants').innerText = text || "Waiting for participants...";
-});
-
-socket.on('answers_update', data => {
-  answers = data.answers;
-  updateAnswers();
-});
-
-socket.on('correct_answer', data => {
-  const card = document.getElementById('questionCard');
-  const correct = data.correctOption;
-  const options = card.querySelectorAll('.option');
-  options.forEach(opt=>{
-    if(opt.dataset.option === correct) opt.classList.add('correct');
-    else if(answers[opt.dataset.name] && answers[opt.dataset.name]===opt.dataset.option) opt.classList.add('wrong');
-  });
-  answeredStatus[data.questionIndex] = true;
-  updateAnswers();
-  resetTimer();
 });
 
 socket.on('leaderboard_update', data => {
@@ -164,50 +154,35 @@ socket.on('leaderboard_update', data => {
   document.getElementById('leaderboard').innerText = text;
 });
 
-socket.on('waiting_message', data => {
-  document.getElementById('questionCard').innerText = data.text;
-});
-
-socket.on('start_timer', () => startTimer(15));
-
-// ====================
+// ===================
 // Functions
-// ====================
-function renderQuestion(){
-  const card = document.getElementById('questionCard');
-  const q = questions[currentSection][questionIndex];
-  currentQuestion = q;
-  answers = {};
-  card.innerHTML = `<h3>Q${questionIndex+1}: ${q.text}</h3>`;
-  q.options.forEach(opt=>{
-    const btn = document.createElement('div');
-    btn.className='option';
-    btn.innerText = opt;
-    btn.dataset.option = opt;
-    card.appendChild(btn);
+// ===================
+function renderCurrentQuestion(results={}){
+  const container = document.getElementById('questionList');
+  container.innerHTML = '';
+  if(currentIndex<0 || !currentSection) return;
+
+  const q = questions[currentSection][currentIndex];
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  const h4 = document.createElement('h4');
+  h4.innerText = `Q${currentIndex+1}: ${q.question}`;
+  card.appendChild(h4);
+
+  const optionsDiv = document.createElement('div');
+  optionsDiv.className = 'options';
+
+  ['A','B','C','D'].forEach(opt=>{
+    const btn = document.createElement('button');
+    btn.innerText = `${opt}) ${q[opt]}`;
+    if(results[opt]){
+      btn.className = results[opt].correct ? 'correct':'wrong';
+    }
+    optionsDiv.appendChild(btn);
   });
-  socket.emit('new_question'); // send to participants
-}
-
-function updateAnswers(){
-  const text = Object.keys(answers).map(n=>`${n}: ${answers[n]}`).join('\n');
-  document.getElementById('participants').innerText = text || "No answers yet";
-}
-
-function startTimer(seconds){
-  clearInterval(timerInterval);
-  timeLeft = seconds;
-  document.getElementById('timer').innerText = timeLeft;
-  timerInterval = setInterval(()=>{
-    timeLeft--;
-    document.getElementById('timer').innerText = timeLeft;
-    if(timeLeft <= 0) clearInterval(timerInterval);
-  },1000);
-}
-
-function resetTimer(){
-  clearInterval(timerInterval);
-  document.getElementById('timer').innerText = 0;
+  card.appendChild(optionsDiv);
+  container.appendChild(card);
 }
 </script>
 </body>
