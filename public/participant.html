@@ -11,18 +11,19 @@
   header h1 { margin:5px 0; font-size:22px; }
   header h2 { margin:0; font-size:16px; font-weight:400; }
   header p { margin:5px 0; font-size:14px; }
-  main { padding:15px; max-width:600px; margin:auto; }
+  main { padding:15px; max-width:600px; margin:auto; text-align:center; }
   input { width:100%; padding:10px; margin:5px 0 15px 0; border-radius:6px; border:1px solid #ccc; font-size:14px; }
   button { padding:10px 15px; margin:5px 0; border:none; border-radius:6px; font-size:14px; cursor:pointer; transition:0.3s; }
   #joinBtn { background:#FF9800; color:white; width:100%; }
   #joinBtn:hover { opacity:0.9; }
-  #questionDiv { display:none; margin-top:20px; background:white; padding:15px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+  #quizDiv { display:none; margin-top:20px; background:white; padding:20px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.1); min-height:200px; }
   .option-btn { display:block; margin:10px 0; padding:10px; font-size:16px; cursor:pointer; border-radius:6px; border:none; transition:0.3s; }
   .option-btn:hover { opacity:0.9; }
   .correct { background-color: #4CAF50; color:white; }
   .wrong { background-color: #f44336; color:white; }
   #scoreDiv { display:none; margin-top:20px; font-size:16px; background:white; padding:10px; border-radius:6px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
   .timer { font-size:18px; background:#FFEB3B; padding:8px 12px; border-radius:6px; color:#333; display:flex; justify-content:center; margin:15px 0; }
+  .waiting { font-style:italic; color:#555; margin-top:10px; font-size:14px; }
   footer { background:#333; color:white; text-align:center; padding:15px; margin-top:30px; font-size:14px; }
   @media(max-width:600px){ .option-btn { font-size:14px; } }
 </style>
@@ -35,17 +36,21 @@
 </header>
 
 <main>
-  <h2>Join the Quiz</h2>
-  <input id="name" placeholder="Your Name">
-  <input id="exam" placeholder="Exam Number">
-  <button id="joinBtn">Join</button>
+  <div id="joinDiv">
+    <h2>Join the Quiz</h2>
+    <input id="name" placeholder="Your Name">
+    <input id="exam" placeholder="Exam Number">
+    <button id="joinBtn">Join</button>
+  </div>
 
   <div class="timer" id="timerDiv" style="display:none;">
     Time Remaining: <span id="timerDisplay">0</span>s
   </div>
 
-  <div id="questionDiv">
-    <h3 id="questionText"></h3>
+  <div id="quizDiv">
+    <h2 id="welcomeMessage">Welcome to BBC 7.0 Quiz Page</h2>
+    <p class="waiting" id="waitingMessage">Waiting for Quiz Master to begin Quiz</p>
+    <h3 id="questionText" style="display:none;"></h3>
     <div id="options"></div>
   </div>
 
@@ -75,17 +80,26 @@
 
     myName = name;
     socket.emit("join",{name,examNumber:exam});
-    alert("Joined as "+name);
-    document.getElementById("joinBtn").disabled=true;
-    document.getElementById("name").disabled=true;
-    document.getElementById("exam").disabled=true;
+    document.getElementById("joinDiv").style.display="none";
+    document.getElementById("quizDiv").style.display="block";
     document.getElementById("scoreDiv").style.display="block";
   };
 
+  // Admin sends message (like announcement)
+  socket.on("display_message", msg=>{
+    document.getElementById("welcomeMessage").innerText=msg.main;
+    document.getElementById("waitingMessage").innerText=msg.sub || "";
+    document.getElementById("questionText").style.display="none";
+    document.getElementById("options").innerHTML="";
+  });
+
   // Receive question
   socket.on("question", q => {
-    document.getElementById("questionDiv").style.display="block";
+    document.getElementById("welcomeMessage").innerText="";
+    document.getElementById("waitingMessage").innerText="";
+    document.getElementById("questionText").style.display="block";
     document.getElementById("questionText").innerText=q.text;
+
     const optionsDiv=document.getElementById("options");
     optionsDiv.innerHTML="";
     selectedBtn=null;
@@ -129,7 +143,7 @@
       myScore=data.scores[myName];
       document.getElementById("scoreText").innerText=myScore;
     }
-    document.getElementById("timerDiv").style.display="none"; // hide timer after question
+    document.getElementById("timerDiv").style.display="none";
     if(timerInterval) clearInterval(timerInterval);
   });
 </script>
