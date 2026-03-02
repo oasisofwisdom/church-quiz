@@ -1,75 +1,71 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Oasis of Wisdom Bible Church - BBC 7.0 Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-<style>
-  body { font-family:'Roboto',sans-serif; margin:0; background:#f0f0f5; color:#333; }
-  header { background: linear-gradient(90deg,#4CAF50,#FFEB3B); color:white; padding:15px 20px; text-align:center; }
-  header h1 { margin:5px 0; font-size:22px; }
-  header h2 { margin:0; font-size:16px; font-weight:400; }
-  main { padding:15px; max-width:950px; margin:auto; }
-  h3 { color:#4CAF50; margin-top:20px; }
-  .top-container { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; margin-bottom:10px; }
-  .timer { font-size:18px; background:#FFEB3B; padding:8px 12px; border-radius:6px; color:#333; margin:5px 0; display:flex; align-items:center; }
-  .timer span { font-weight:bold; margin-left:5px; }
-  button { margin:5px; padding:10px 15px; border:none; cursor:pointer; border-radius:6px; font-size:14px; transition:0.3s; }
-  .section-btn { background:#FFEB3B; color:#333; }
-  .section-btn:hover { background:#fdd835; }
-  .question-btn { display:block; width:100%; text-align:left; background:#f44336; color:white; margin:5px 0; padding:10px; border-radius:6px; }
-  .question-btn.answered { background:#4CAF50; }
-  .question-btn.unanswered { background:#f44336; }
-  #revealBtn, #nextBtn, #exportBtn, #startTimerBtn { background:#FF9800; color:white; }
-  #revealBtn:hover, #nextBtn:hover, #exportBtn:hover, #startTimerBtn:hover { opacity:0.9; }
-  #participants { background:white; padding:15px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.1); white-space:pre-wrap; overflow-x:auto; }
-  #leaderboard { margin-top:10px; border-collapse:collapse; width:100%; }
-  #leaderboard th, #leaderboard td { border:1px solid #ddd; padding:8px; text-align:left; }
-  #leaderboard th { background:#4CAF50; color:white; }
-  footer { background:#333; color:white; text-align:center; padding:15px; margin-top:30px; font-size:14px; }
-  @media(max-width:600px){
-    .top-container { flex-direction:column; align-items:flex-start; }
-    .timer { margin-left:0; margin-top:10px; }
-    button { width:100%; }
-  }
-</style>
+  <title>Oasis of Wisdom Bible Church - BBC 7.0 Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 0;
+      background: #f2f2f2;
+      color: #333;
+    }
+    header {
+      background: #4CAF50;
+      color: white;
+      padding: 15px;
+      text-align: center;
+    }
+    h2, h3 { margin: 10px 0; }
+    .container { padding: 15px; max-width: 800px; margin: auto; }
+    .section-btn, .question-btn, .action-btn {
+      margin: 5px 0;
+      padding: 8px 12px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+    }
+    .section-btn { background: #2196F3; color: white; }
+    .question-btn.unanswered { background: #f44336; color: white; text-align: left; }
+    .question-btn.answered { background: #4CAF50; color: white; text-align: left; }
+    .action-btn { background: #FF9800; color: white; }
+    #participants, #leaderboard { white-space: pre-wrap; background: #fff; padding: 10px; border-radius: 5px; margin-top: 10px; }
+    #timerDisplay { font-size: 20px; font-weight: bold; margin-top: 10px; }
+    footer { text-align: center; padding: 15px; background: #333; color: white; margin-top: 20px; }
+  </style>
 </head>
 <body>
+
 <header>
-  <h1>Oasis of Wisdom Bible Church</h1>
-  <h2>Back to the Bible Challenge (BBC) 7.0</h2>
-  <p>Theme: Walking in Covenant Perfection - Matthew 5:48</p>
+  <h2>Oasis of Wisdom Bible Church</h2>
+  <p>Back to the Bible Challenge (BBC) 7.0</p>
+  <small>Theme: Walking in Covenant Perfection | Matthew 5:48</small>
 </header>
-<main>
-  <div class="top-container">
-    <div>
-      <h3>Sections</h3>
-      <div id="sectionsDiv"></div>
-    </div>
-    <div class="timer">
-      Timer: <span id="timerDisplay">0</span>s
-      <button id="startTimerBtn">Start</button>
-    </div>
-  </div>
+
+<div class="container">
+
+  <h3>Sections</h3>
+  <div id="sectionsDiv"></div>
 
   <h3>Questions in Section</h3>
   <div id="questionsDiv"></div>
-  <div>
-    <button id="revealBtn" onclick="revealCorrect()" style="display:none;">Show Correct Answer</button>
-    <button id="nextBtn" onclick="nextQuestion()" style="display:none;">Next Question</button>
-    <button id="exportBtn" onclick="exportResults()">Export Results</button>
-  </div>
+  <button id="revealBtn" class="action-btn" style="display:none;" onclick="revealCorrect()">Show Correct Answer</button>
+  <button id="nextBtn" class="action-btn" onclick="nextQuestion()">Next Question</button>
+  <button id="waitingMsgBtn" class="action-btn" onclick="sendWaitingMessage()">Display Waiting Message</button>
+
+  <div id="timerDisplay">Timer: 0</div>
 
   <h3>Participants Live / Answers / Scores</h3>
   <pre id="participants"></pre>
 
-  <h3>Leaderboard</h3>
-  <table id="leaderboard">
-    <thead><tr><th>Rank</th><th>Name</th><th>Score</th></tr></thead>
-    <tbody></tbody>
-  </table>
-</main>
+  <h3>Live Leaderboard</h3>
+  <pre id="leaderboard"></pre>
+
+  <button class="action-btn" onclick="exportResults()">Export Results (CSV)</button>
+  
+</div>
 
 <footer>
   BBC! The Word in my heart and acts.<br>
@@ -78,102 +74,132 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-const socket=io();
-let currentSection="", sectionQuestions=[], answeredStatus=[], currentQuestionIndex=null;
-let timerValue=0, timerInterval=null;
+  const socket = io();
 
-// Render sections
-const sections = ["Joshua","1 Kings","Proverbs","Romans","James","General Bible Knowledge"];
-const sectionsDiv=document.getElementById("sectionsDiv");
-sections.forEach(sec=>{
-  const btn=document.createElement("button");
-  btn.innerText=sec;
-  btn.className="section-btn";
-  btn.onclick=()=>{
-    socket.emit("start_section", sec);
-    currentSection=sec;
-    document.getElementById("questionsDiv").innerHTML="";
-    document.getElementById("revealBtn").style.display="none";
-    document.getElementById("nextBtn").style.display="none";
-  };
-  sectionsDiv.appendChild(btn);
-});
+  let currentSection = "";
+  let sectionQuestions = [];
+  let answeredStatus = [];
+  let currentQuestionIndex = null;
+  let timerInterval = null;
+  let timeLeft = 15;
 
-// Receive section questions
-socket.on("admin_section_questions",data=>{
-  sectionQuestions=data.questions;
-  answeredStatus=data.answered;
-  renderQuestions();
-});
-
-function renderQuestions(){
-  const div=document.getElementById("questionsDiv");
-  div.innerHTML="";
-  sectionQuestions.forEach((q,i)=>{
-    const btn=document.createElement("button");
-    btn.innerText=`Q${i+1}: ${q.text}`;
-    btn.className="question-btn "+(answeredStatus[i]?"answered":"unanswered");
-    btn.onclick=()=>{
-      currentQuestionIndex=i;
-      socket.emit("new_question");
-      document.getElementById("revealBtn").style.display="inline-block";
-      document.getElementById("nextBtn").style.display="inline-block";
+  // Render all sections
+  const sections = ["Joshua","1 Kings","Proverbs","Romans","James","General Bible Knowledge"];
+  const sectionsDiv = document.getElementById("sectionsDiv");
+  sections.forEach(sec => {
+    const btn = document.createElement("button");
+    btn.innerText = sec;
+    btn.className = "section-btn";
+    btn.onclick = () => {
+      socket.emit("start_section", sec);
+      currentSection = sec;
+      document.getElementById("questionsDiv").innerHTML = "";
+      document.getElementById("revealBtn").style.display = "none";
     };
-    div.appendChild(btn);
+    sectionsDiv.appendChild(btn);
   });
-}
 
-function revealCorrect(){ if(currentQuestionIndex!==null) socket.emit("show_correct"); }
-function nextQuestion(){ socket.emit("next_question"); document.getElementById("revealBtn").style.display="none"; document.getElementById("nextBtn").style.display="none"; }
-function exportResults(){ socket.emit("export_results"); alert("Results exported on server."); }
+  // Receive section questions and answered info
+  socket.on("admin_section_questions", data => {
+    sectionQuestions = data.questions;
+    answeredStatus = data.answered;
+    renderQuestions();
+  });
 
-// Timer start
-document.getElementById("startTimerBtn").onclick=()=>{
-  timerValue=15;
-  document.getElementById("timerDisplay").innerText=timerValue;
-  socket.emit("start_timer");
-  if(timerInterval) clearInterval(timerInterval);
-  timerInterval=setInterval(()=>{
-    timerValue--;
-    document.getElementById("timerDisplay").innerText=timerValue;
-    if(timerValue<=0) clearInterval(timerInterval);
-  },1000);
-};
-
-// Participants & answers
-socket.on("participants_update",data=>{ document.getElementById("participants").innerText="Participants Live:\n"+JSON.stringify(data,null,2); });
-socket.on("answers_update",data=>{
-  let text="Pending Answers:\n";
-  for(let name in data.answers) text+=`${name}: ${data.answers[name]}\n`;
-  document.getElementById("participants").innerText=text;
-});
-
-// Correct answers
-socket.on("correct_answer",data=>{
-  let text=`Correct Option: ${data.correctOption}\nResults:\n`;
-  for(let name in data.results){
-    const res=data.results[name];
-    text+=`${name}: ${res.answer} → ${res.correct?"✅":"❌"}\n`;
+  function renderQuestions() {
+    const questionsDiv = document.getElementById("questionsDiv");
+    questionsDiv.innerHTML = "";
+    sectionQuestions.forEach((q, i) => {
+      const btn = document.createElement("button");
+      btn.innerText = `Q${i+1}: ${q.text}`;
+      btn.className = "question-btn " + (answeredStatus[i] ? "answered" : "unanswered");
+      btn.onclick = () => {
+        currentQuestionIndex = i;
+        socket.emit("new_question");
+        document.getElementById("revealBtn").style.display = "inline-block";
+      };
+      questionsDiv.appendChild(btn);
+    });
   }
-  text+="\nScores:\n";
-  for(let name in data.scores) text+=`${name}: ${data.scores[name]}\n`;
-  document.getElementById("participants").innerText=text;
 
-  if(data.section===currentSection){ answeredStatus[data.questionIndex]=true; renderQuestions(); }
-  document.getElementById("revealBtn").style.display="none";
-});
+  function revealCorrect() {
+    if (currentQuestionIndex !== null) {
+      socket.emit("show_correct");
+      stopTimer();
+    }
+  }
 
-// Leaderboard
-socket.on("leaderboard_update",scores=>{
-  const tbody=document.querySelector("#leaderboard tbody");
-  tbody.innerHTML="";
-  const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
-  sorted.forEach((entry,i)=>{
-    const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${i+1}</td><td>${entry[0]}</td><td>${entry[1]}</td>`;
-    tbody.appendChild(tr);
+  function nextQuestion() {
+    socket.emit("next_question");
+    document.getElementById("revealBtn").style.display = "none";
+    resetTimer();
+  }
+
+  function sendWaitingMessage(){
+    const msg = "Welcome to BBC 7.0 Quiz Page";
+    const submsg = "Waiting for Quiz Master to begin Quiz";
+    socket.emit("display_waiting_message", {main: msg, sub: submsg});
+  }
+
+  function startTimer() {
+    timeLeft = 15;
+    document.getElementById("timerDisplay").innerText = `Timer: ${timeLeft}`;
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      document.getElementById("timerDisplay").innerText = `Timer: ${timeLeft}`;
+      if (timeLeft <= 0) clearInterval(timerInterval);
+    }, 1000);
+    socket.emit("start_timer"); // notify participants
+  }
+
+  function resetTimer() {
+    clearInterval(timerInterval);
+    document.getElementById("timerDisplay").innerText = "Timer: 0";
+  }
+
+  // Participants & answers
+  socket.on("participants_update", data => {
+    document.getElementById("participants").innerText =
+      "Participants Live:\n" + JSON.stringify(data, null, 2);
   });
-});
+
+  socket.on("answers_update", data => {
+    let text = "Pending Answers (not scored yet):\n";
+    for (let name in data.answers) {
+      text += `${name}: ${data.answers[name]}\n`;
+    }
+    document.getElementById("participants").innerText = text;
+  });
+
+  // Correct answer revealed
+  socket.on("correct_answer", data => {
+    let text = `Correct Option: ${data.correctOption}\n\nResults:\n`;
+    for (let name in data.results) {
+      const res = data.results[name];
+      text += `${name}: ${res.answer} → ${res.correct ? "✅ Correct" : "❌ Wrong"}\n`;
+    }
+    text += `\nCumulative Scores:\n`;
+    for (let name in data.scores) text += `${name}: ${data.scores[name]}\n`;
+    document.getElementById("participants").innerText = text;
+    answeredStatus[data.questionIndex] = true;
+    renderQuestions();
+    resetTimer();
+  });
+
+  // Leaderboard live
+  socket.on("leaderboard_update", data => {
+    let text = "";
+    for (let name in data) text += `${name}: ${data[name]}\n`;
+    document.getElementById("leaderboard").innerText = text;
+  });
+
+  // Export results
+  function exportResults() {
+    socket.emit("export_results");
+    alert("Results exported to server CSV file.");
+  }
+
 </script>
 </body>
 </html>
