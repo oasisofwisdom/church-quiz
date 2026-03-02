@@ -2,12 +2,15 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const fs = require("fs");
-const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
+
+// Socket.io (allow all networks / phones)
 const io = new Server(server, {
-  cors: { origin: "*" }
+  cors: {
+    origin: "*"
+  }
 });
 
 app.use(express.static("public"));
@@ -15,26 +18,40 @@ app.use(express.static("public"));
 // =====================
 // DATA STORAGE
 // =====================
-let participants = {}; // socket.id => {name, examNumber}
-let scores = {};       // name => score
-let currentSection = "";
-let questionIndex = 0;
+let participants = {};     // socket.id => {name, examNumber}
+let scores = {};           // name => score
 let currentQuestion = {};
 let answers = {};
-let answeredQuestions = {};
-let sections = {};     // Loaded from questions.json
+let currentSection = "";
+let questionIndex = 0;
 
 // =====================
-// LOAD QUESTIONS.JSON
+// QUIZ QUESTIONS
 // =====================
-const questionsPath = path.join(__dirname, "public", "questions.json");
-if (fs.existsSync(questionsPath)) {
-  const rawData = fs.readFileSync(questionsPath);
-  sections = JSON.parse(rawData);
-  console.log("Questions loaded:", Object.keys(sections));
-} else {
-  console.error("questions.json not found in /public folder!");
-}
+const quiz = {
+  Joshua: [
+    { text: "Who led Israel into Canaan?", options: ["A. Moses","B. Joshua","C. Caleb","D. Aaron"], correct: "B" },
+    { text: "What river did Joshua cross to enter Canaan?", options: ["A. Jordan","B. Nile","C. Euphrates","D. Tigris"], correct: "A" }
+  ],
+  "1 Kings": [
+    { text: "Who was Solomon's father?", options: ["A. Saul","B. David","C. Rehoboam","D. Jeroboam"], correct: "B" }
+  ],
+  Proverbs: [
+    { text: "Proverbs is mostly written by?", options: ["A. Solomon","B. David","C. Moses","D. Isaiah"], correct: "A" }
+  ],
+  Romans: [
+    { text: "Who wrote the book of Romans?", options: ["A. Peter","B. Paul","C. John","D. Luke"], correct: "B" }
+  ],
+  James: [
+    { text: "James is the brother of?", options: ["A. Jesus","B. John","C. Peter","D. Paul"], correct: "A" }
+  ],
+  "General Bible Knowledge": [
+    { text: "How many days did God take to create the world?", options: ["A. 5","B. 6","C. 7","D. 8"], correct: "B" }
+  ]
+};
+
+// Track answered questions for admin
+let answeredQuestions = {};
 
 // =====================
 // SOCKET EVENTS
@@ -44,60 +61,48 @@ io.on("connection", socket => {
 
   // Participant joins
   socket.on("join", data => {
-    participants[socket.id] = { name: data.name, examNumber: data.examNumber };
+    participants[socket.id] = {
+      name: data.name,
+      examNumber: data.examNumber
+    };
+
     if (!(data.name in scores)) scores[data.name] = 0;
+
     io.emit("participants_update", participants);
     io.emit("leaderboard_update", scores);
   });
 
-  // Admin requests sections
-  socket.on("get_sections", () => {
-    io.to(socket.id).emit("sections_list", Object.keys(sections));
-  });
-
   // Admin starts a section
   socket.on("start_section", section => {
-    if (!sections[section]) return;
+    if (!quiz[section]) return;
 
     currentSection = section;
     questionIndex = 0;
-    currentQuestion = sections[section][0] || {};
-    answers = {};
-    answeredQuestions[section] = sections[section].map(() => false);
+    answeredQuestions[section] = quiz[section].map(() => false);
 
     io.emit("section_started", section);
     io.emit("admin_section_questions", {
       section,
-      questions: sections[section],
+      questions: quiz[section],
       answered: answeredQuestions[section]
     });
-
-    // Send first question automatically
-    io.emit("question", currentQuestion);
-    io.emit("answers_update", { answers });
   });
 
-  // Admin sends next question
+  // Admin sends current question
   socket.on("new_question", () => {
-    const sectionQuestions = sections[currentSection];
+    const sectionQuestions = quiz[currentSection];
     if (!sectionQuestions || questionIndex >= sectionQuestions.length) return;
 
     currentQuestion = sectionQuestions[questionIndex];
     answers = {};
+
     io.emit("question", currentQuestion);
     io.emit("answers_update", { answers });
   });
 
-  // Admin starts timer
+  // Admin starts 15-second timer
   socket.on("start_timer", () => {
     io.emit("start_timer");
-  });
-
-  // Admin sends waiting message
-  socket.on("waiting_message", () => {
-    io.emit("waiting_message", {
-      text: "Welcome to BBC 7.0 Quiz Page.\nWaiting for Quiz Master to begin Quiz."
-    });
   });
 
   // Participant answers
@@ -111,16 +116,17 @@ io.on("connection", socket => {
   // Admin reveals correct answer
   socket.on("show_correct", () => {
     const results = {};
+
     for (let name in answers) {
-      const correct = answers[name] === currentQuestion.answer; // use 'answer' key
-      if (correct) scores[name] = (scores[name] || 0) + 1;
+      const correct = answers[name].startsWith(currentQuestion.correct);
+      if (correct) scores[name] += 1;
       results[name] = { answer: answers[name], correct };
     }
 
     answeredQuestions[currentSection][questionIndex] = true;
 
     io.emit("correct_answer", {
-      correctOption: currentQuestion.answer,
+      correctOption: currentQuestion.correct,
       results,
       scores,
       section: currentSection,
@@ -133,9 +139,9 @@ io.on("connection", socket => {
   // Admin goes to next question
   socket.on("next_question", () => {
     questionIndex++;
-    const sectionQuestions = sections[currentSection];
+    const sectionQuestions = quiz[currentSection];
 
-    if (sectionQuestions && questionIndex < sectionQuestions.length) {
+    if (questionIndex < sectionQuestions.length) {
       currentQuestion = sectionQuestions[questionIndex];
       answers = {};
       io.emit("question", currentQuestion);
@@ -143,8 +149,6 @@ io.on("connection", socket => {
     } else {
       io.emit("section_complete", currentSection);
       questionIndex = 0;
-      currentSection = "";
-      currentQuestion = {};
     }
   });
 
@@ -156,7 +160,7 @@ io.on("connection", socket => {
       csv += `${p.name},${p.examNumber},${scores[p.name] || 0}\n`;
     }
     fs.writeFileSync("quiz_results.csv", csv);
-    console.log("Results exported to quiz_results.csv");
+    console.log("Results exported");
   });
 
   // Disconnect
@@ -168,9 +172,10 @@ io.on("connection", socket => {
 });
 
 // =====================
-// START SERVER
+// START SERVER (RENDER SAFE)
 // =====================
 const PORT = process.env.PORT || 3000;
+
 server.listen(PORT, () => {
   console.log("Server running on port", PORT);
 });
