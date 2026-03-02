@@ -2,15 +2,14 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const fs = require("fs");
+const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
 
-// Socket.io (allow all networks / phones)
+// Socket.io with CORS for mobile/remote access
 const io = new Server(server, {
-  cors: {
-    origin: "*"
-  }
+  cors: { origin: "*" }
 });
 
 app.use(express.static("public"));
@@ -24,34 +23,22 @@ let currentQuestion = {};
 let answers = {};
 let currentSection = "";
 let questionIndex = 0;
+let quiz = {};             // Will hold questions loaded from JSON
+let answeredQuestions = {}; // Track answered questions per section
 
 // =====================
-// QUIZ QUESTIONS
+// LOAD QUESTIONS FROM JSON
 // =====================
-const quiz = {
-  Joshua: [
-    { text: "Who led Israel into Canaan?", options: ["A. Moses","B. Joshua","C. Caleb","D. Aaron"], correct: "B" },
-    { text: "What river did Joshua cross to enter Canaan?", options: ["A. Jordan","B. Nile","C. Euphrates","D. Tigris"], correct: "A" }
-  ],
-  "1 Kings": [
-    { text: "Who was Solomon's father?", options: ["A. Saul","B. David","C. Rehoboam","D. Jeroboam"], correct: "B" }
-  ],
-  Proverbs: [
-    { text: "Proverbs is mostly written by?", options: ["A. Solomon","B. David","C. Moses","D. Isaiah"], correct: "A" }
-  ],
-  Romans: [
-    { text: "Who wrote the book of Romans?", options: ["A. Peter","B. Paul","C. John","D. Luke"], correct: "B" }
-  ],
-  James: [
-    { text: "James is the brother of?", options: ["A. Jesus","B. John","C. Peter","D. Paul"], correct: "A" }
-  ],
-  "General Bible Knowledge": [
-    { text: "How many days did God take to create the world?", options: ["A. 5","B. 6","C. 7","D. 8"], correct: "B" }
-  ]
-};
+const questionsPath = path.join(__dirname, "questions.json");
 
-// Track answered questions for admin
-let answeredQuestions = {};
+try {
+  const rawData = fs.readFileSync(questionsPath);
+  quiz = JSON.parse(rawData);
+  console.log("Questions loaded from questions.json");
+} catch (err) {
+  console.error("Error reading questions.json:", err);
+  process.exit(1);
+}
 
 // =====================
 // SOCKET EVENTS
@@ -61,11 +48,7 @@ io.on("connection", socket => {
 
   // Participant joins
   socket.on("join", data => {
-    participants[socket.id] = {
-      name: data.name,
-      examNumber: data.examNumber
-    };
-
+    participants[socket.id] = { name: data.name, examNumber: data.examNumber };
     if (!(data.name in scores)) scores[data.name] = 0;
 
     io.emit("participants_update", participants);
@@ -78,6 +61,7 @@ io.on("connection", socket => {
 
     currentSection = section;
     questionIndex = 0;
+
     answeredQuestions[section] = quiz[section].map(() => false);
 
     io.emit("section_started", section);
@@ -152,6 +136,11 @@ io.on("connection", socket => {
     }
   });
 
+  // Admin sends message to participants
+  socket.on("admin_message", msg => {
+    io.emit("admin_message", msg);
+  });
+
   // Export results to CSV
   socket.on("export_results", () => {
     let csv = "Name,Exam Number,Score\n";
@@ -160,7 +149,7 @@ io.on("connection", socket => {
       csv += `${p.name},${p.examNumber},${scores[p.name] || 0}\n`;
     }
     fs.writeFileSync("quiz_results.csv", csv);
-    console.log("Results exported");
+    console.log("Results exported to quiz_results.csv");
   });
 
   // Disconnect
@@ -172,7 +161,7 @@ io.on("connection", socket => {
 });
 
 // =====================
-// START SERVER (RENDER SAFE)
+// START SERVER
 // =====================
 const PORT = process.env.PORT || 3000;
 
