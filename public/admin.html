@@ -17,7 +17,7 @@
 
   #sectionsContainer { margin-bottom:20px; }
   #questionList { margin-bottom:20px; }
-  #participants, #leaderboard { white-space: pre-wrap; background:#e8f5e9; padding:10px; border-radius:8px; margin-bottom:10px; }
+  #participants, #leaderboard { white-space: pre-wrap; background:#e8f5e9; padding:10px; border-radius:8px; margin-bottom:10px; min-height:60px; }
   #timer { font-size:20px; color:#d32f2f; margin:10px 0; }
 </style>
 </head>
@@ -66,7 +66,7 @@ let answeredStatus = [];
 let timerInterval = null;
 let timeLeft = 0;
 
-// Load sections from server (will send questions.json)
+// Load sections from questions.json
 fetch('/questions.json')
   .then(res => res.json())
   .then(data => {
@@ -78,7 +78,8 @@ fetch('/questions.json')
       opt.innerText = sec;
       select.appendChild(opt);
     });
-  });
+  })
+  .catch(err => console.error("Failed to load questions.json:", err));
 
 // ====================
 // Button events
@@ -87,13 +88,12 @@ document.getElementById('startSectionBtn').onclick = () => {
   const section = document.getElementById('sectionSelect').value;
   if(!section) return alert('Select a section');
   socket.emit('start_section', section);
-  // Initialize answered status
   answeredStatus = questions[section].map(() => false);
   renderQuestions();
 };
 
 document.getElementById('showWaitingBtn').onclick = () => {
-  socket.emit('admin_message', "Waiting for Quiz Master to begin Quiz...");
+  socket.emit('waiting_message');
 };
 
 document.getElementById('newQuestionBtn').onclick = () => {
@@ -152,13 +152,19 @@ socket.on('leaderboard_update', data => {
   document.getElementById('leaderboard').innerText = text;
 });
 
+// Render questions list when section starts
 socket.on('admin_section_questions', data => {
-  // render questions list with answered status
-  questions[data.section].forEach((q,i)=>{
-    answeredStatus[i] = false;
-  });
+  answeredStatus = data.questions.map(() => false);
   renderQuestions();
 });
+
+// Display waiting message
+socket.on('waiting_message', data => {
+  document.getElementById('participants').innerText = data.text;
+});
+
+// Start timer
+socket.on('start_timer', () => startTimer(15));
 
 // ====================
 // Functions
@@ -166,7 +172,9 @@ socket.on('admin_section_questions', data => {
 function renderQuestions(){
   const container = document.getElementById('questionList');
   container.innerHTML = '';
-  questions[document.getElementById('sectionSelect').value]?.forEach((q,i)=>{
+  const section = document.getElementById('sectionSelect').value;
+  if(!questions[section]) return;
+  questions[section].forEach((q,i)=>{
     const div = document.createElement('div');
     div.innerText = `${i+1}. ${q.text} ${answeredStatus[i]? '✅':'❌'}`;
     container.appendChild(div);
@@ -180,7 +188,7 @@ function startTimer(seconds){
   timerInterval = setInterval(()=>{
     timeLeft--;
     document.getElementById('timer').innerText = timeLeft;
-    if(timeLeft<=0) clearInterval(timerInterval);
+    if(timeLeft <= 0) clearInterval(timerInterval);
   },1000);
 }
 
