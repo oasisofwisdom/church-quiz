@@ -7,97 +7,83 @@
 <style>
   body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f0f4f3; }
   header { background:#2e7d32; color:white; text-align:center; padding:20px; }
+  header h1 { margin:0; font-size:24px; }
+  header p { margin:2px 0; font-size:14px; font-style:italic; }
+
   main { max-width:700px; margin:20px auto; padding:10px; background:white; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
-  input, button { padding:10px; font-size:16px; margin:5px 0; border-radius:8px; border:1px solid #ccc; }
-  button { background:#2e7d32; color:white; cursor:pointer; border:none; }
-  button:hover { background:#1b5e20; }
-  #question { margin:20px 0; font-size:18px; }
-  #answers { margin:10px 0; }
-  #answers button { display:block; width:100%; margin:5px 0; }
-  #message { white-space: pre-wrap; background:#e8f5e9; padding:10px; border-radius:8px; min-height:60px; }
-  #timer { font-size:20px; color:#d32f2f; margin:10px 0; }
+  #questionCard { border:1px solid #ccc; border-radius:12px; padding:20px; margin-bottom:20px; background:#e8f5e9; min-height:150px; }
+  .option { display:block; margin:10px 0; padding:10px; border-radius:8px; background:#c8e6c9; cursor:pointer; border:1px solid #2e7d32; }
+  .option.selected { background:#aed581; }
+  #status { margin-bottom:20px; white-space: pre-wrap; }
+  footer { text-align:center; font-size:12px; margin-top:20px; color:#555; }
 </style>
 </head>
 <body>
 <header>
   <h1>Oasis of Wisdom Bible Church</h1>
   <p>Back to the Bible Challenge (BBC) 7.0</p>
+  <p><em>Theme: Walking in Covenant Perfection. Matthew 5:48</em></p>
 </header>
 
 <main>
-  <div>
-    <label>Name:</label>
-    <input id="nameInput" type="text" placeholder="Enter your name">
-    <label>Exam Number:</label>
-    <input id="examInput" type="text" placeholder="Enter exam number">
-    <button id="joinBtn">Join Quiz</button>
-  </div>
-
-  <div id="question"></div>
-  <div id="answers"></div>
-  <div id="timer">0</div>
-  <div id="message">Waiting for Quiz Master to begin...</div>
+  <div id="questionCard">Waiting for quiz master to start...</div>
+  <div id="status"></div>
 </main>
+
+<footer>
+  BBC! The Word in my heart and acts.<br>
+  BB&C! Believing and Behaving the Bible
+</footer>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
-let joined = false;
-
-// ====================
-// Join Quiz
-// ====================
-document.getElementById('joinBtn').onclick = () => {
-  const name = document.getElementById('nameInput').value.trim();
-  const examNumber = document.getElementById('examInput').value.trim();
-  if(!name || !examNumber) return alert('Enter name and exam number');
-  socket.emit('join', { name, examNumber });
-  joined = true;
-  document.getElementById('nameInput').disabled = true;
-  document.getElementById('examInput').disabled = true;
-  document.getElementById('joinBtn').disabled = true;
-};
+let currentQuestion = {};
+let answered = false;
 
 // ====================
 // Socket events
 // ====================
-socket.on('question', data => {
-  document.getElementById('question').innerText = data.text;
-  const answersDiv = document.getElementById('answers');
-  answersDiv.innerHTML = '';
-  data.options.forEach(opt=>{
-    const btn = document.createElement('button');
-    btn.innerText = `${opt}`;
-    btn.onclick = () => {
-      if(!joined) return alert('Join first');
-      socket.emit('answer', { answer: opt });
-      document.getElementById('message').innerText = `You answered: ${opt}`;
-    };
-    answersDiv.appendChild(btn);
+socket.on('question', q => {
+  currentQuestion = q;
+  answered = false;
+  const card = document.getElementById('questionCard');
+  card.innerHTML = `<h3>${q.text}</h3>`;
+  q.options.forEach(opt=>{
+    const btn = document.createElement('div');
+    btn.className='option';
+    btn.innerText = opt;
+    btn.onclick = () => submitAnswer(opt);
+    card.appendChild(btn);
   });
+  document.getElementById('status').innerText = "Select your answer";
+});
+
+socket.on('correct_answer', data => {
+  document.getElementById('status').innerText = "Correct Answer: " + data.correctOption;
 });
 
 socket.on('waiting_message', data => {
-  document.getElementById('message').innerText = data.text;
+  document.getElementById('questionCard').innerText = data.text;
 });
 
-socket.on('start_timer', () => startTimer(15));
+socket.on('start_timer', () => {
+  document.getElementById('status').innerText = "Timer started!";
+});
 
 // ====================
-// Timer
+// Functions
 // ====================
-let timerInterval = null;
-let timeLeft = 0;
-
-function startTimer(seconds){
-  clearInterval(timerInterval);
-  timeLeft = seconds;
-  document.getElementById('timer').innerText = timeLeft;
-  timerInterval = setInterval(()=>{
-    timeLeft--;
-    document.getElementById('timer').innerText = timeLeft;
-    if(timeLeft <=0) clearInterval(timerInterval);
-  },1000);
+function submitAnswer(opt){
+  if(answered) return;
+  answered = true;
+  socket.emit('answer', { answer: opt });
+  const card = document.getElementById('questionCard');
+  const buttons = card.querySelectorAll('.option');
+  buttons.forEach(btn => {
+    if(btn.innerText === opt) btn.classList.add('selected');
+  });
+  document.getElementById('status').innerText = "Answer submitted";
 }
 </script>
 </body>
